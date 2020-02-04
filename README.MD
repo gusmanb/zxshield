@@ -6,8 +6,8 @@ RECOMMENDED ENVIRONMENT
 
 The code is developed in Visual Studio 2019 community edition. 
 
--To develop the Arduino firmware I have used Visual Micro: https://www.visualmicro.com/
--To develop the Spectrum programs I have used SpectNetIDE with Boriel Basic:
+- To develop the Arduino firmware I have used Visual Micro: https://www.visualmicro.com/
+- To develop the Spectrum programs I have used SpectNetIDE with Boriel Basic:
 *	https://github.com/Dotneteer/spectnetide
 *	https://github.com/boriel/zxbasic
 
