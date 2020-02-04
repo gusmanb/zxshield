@@ -1,0 +1,174 @@
+﻿#ifndef __REGISTER_FUNCTIONS__
+
+#define __REGISTER_FUNCTIONS__
+
+
+REM Defines y demás pijotadas
+#define REGISTER_PORT 241
+#define SIZE_PORT 243
+#define DATA_PORT 245
+
+#define NO_REGISTER 255
+#define REGISTER_LOCKED 250
+
+#define REGISTER_TYPE(cfg) ((cfg) bAnd 3)
+#define CAN_READ(cfg) ((cfg) bAnd 4)
+#define CAN_WRITE(cfg) ((cfg) bAnd 8)
+
+#define TYPE_BYTE 0
+#define TYPE_INT 1
+#define TYPE_STREAM 2
+
+#define NOT_SUCCESS(result) ((result) < 0)
+
+#define OP_READ 0
+#define OP_WRITE 1
+
+function fastcall EnableRegister(register as ubyte, type as ubyte, operation as ubyte) as byte
+    asm
+    POP hl                      ;Get return address
+    POP bc                      ;Get type
+    POP de                      ;get operation
+    PUSH hl                     ;Store return address
+    OUT (REGISTER_PORT), A      ;Enable register
+    IN A, (REGISTER_PORT)       ;Read config
+    PUSH AF                     ;Store config
+    XOR NO_REGISTER             ;Check
+    JR NZ, checktype            ;Return if XOR = 0 (0xFF XOR 0xFF = 0)
+    POP AF                      ;Remove config from the stack
+    LD A, NO_REGISTER           ;Store 0xFF (-1)
+    RET                         ;exit
+checktype:
+    POP AF                      ;Retrieve config
+    PUSH AF                     ;Store config
+    AND 3                       ;Filter bits, leave only first two
+    XOR B                       ;Check type, if 0 then is the same type
+    JR Z, checkop
+    POP AF
+    LD A, 0xFE                  ;Store 0xFE (-2)
+    RET
+checkop:
+    LD A, 1
+    AND D
+    JR NZ, writeop
+readop:
+    POP AF                      ;Retrieve config
+    AND 4                       ;Test bit 2
+    JR NZ, checklock
+    LD A, 0xFD                  ;Store 0xFD (-3)
+    RET                         ;
+writeop:
+    POP AF                      ;Retrieve config
+    AND 8                       ;Test bit 3
+    JR NZ, checklock
+    LD A, 0xFD                  ;Store 0xFD (-3)
+    RET                         ;
+checklock:
+    IN A, (SIZE_PORT)           ;Load size, 0xFF = no register, 0xFA = register locked
+    XOR REGISTER_LOCKED         ;XOR result
+    JR Z, checklock             ;If result = 0xFA then check again
+    XOR REGISTER_LOCKED         ;Restore result
+    RET
+    end asm
+end function
+
+REM Funciones de lectura
+
+function ReadByte(register as ubyte, byref output as ubyte) as byte
+
+    dim regLen as byte = EnableRegister(register, TYPE_BYTE, OP_READ)
+
+    if NOT_SUCCESS(regLen) then return -1
+
+    output = in DATA_PORT
+    
+    return 1
+
+end function
+
+function ReadInteger(register as ubyte, byref output as ulong) as byte
+
+    dim regLen as byte = EnableRegister(register, TYPE_INT, OP_READ)
+
+    if NOT_SUCCESS(regLen) then return -1
+
+    dim tVal as ulong
+    tVal = in DATA_PORT
+	output = tVal << 24
+    tVal = in DATA_PORT
+	output = output bOr (tVal << 16)
+    tVal = in DATA_PORT
+	output = output bOr (tVal << 8)
+    tVal = in DATA_PORT
+	output = output bOr tVal
+    
+    return 1
+
+end function
+
+function ReadStream(register as ubyte, byref output as string) as byte
+
+    dim regLen as byte = EnableRegister(register, TYPE_STREAM, OP_READ)
+
+    if NOT_SUCCESS(regLen) then return -1
+
+    dim rl as uinteger
+	for rl = 1 to regLen
+		output = output + chr$(in DATA_PORT)
+	next rl
+    
+    return regLen
+
+end function
+
+REM Funciones de escritura
+
+function WriteByte(register as ubyte, value as ubyte) as byte
+
+    dim result as byte = EnableRegister(register, TYPE_BYTE, OP_WRITE)
+
+    if NOT_SUCCESS(result) then return -1
+
+    out DATA_PORT, value
+
+    return 1
+
+end function
+
+function WriteInteger(register as ubyte, value as ulong) as byte
+
+    dim result as byte = EnableRegister(register, TYPE_INT, OP_WRITE)
+
+    if NOT_SUCCESS(result) then return -1
+
+    out DATA_PORT, (value >> 24) bAnd 255
+	out DATA_PORT, (value >> 16) bAnd 255
+	out DATA_PORT, (value >> 8) bAnd 255
+	out DATA_PORT, value bAnd 255
+
+    return 1
+
+end function
+
+function WriteStream(register as ubyte, byref value as string) as byte
+
+    dim result as byte = EnableRegister(register, TYPE_STREAM, OP_WRITE)
+
+    if NOT_SUCCESS(result) then return -1
+
+    dim sLen as ubyte  = len value
+
+    if sLen > 64 then return -2
+
+    if result <> sLen then out SIZE_PORT, sLen
+
+    dim wl as uinteger
+	for wl = 0 to sLen - 1
+		out 245, code value(wl to wl)
+	next wl
+
+    return 1
+
+end function
+
+#endif

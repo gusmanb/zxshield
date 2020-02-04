@@ -1,0 +1,27 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Label="Globals">
+    <CustomProjectExtensionsPath>$(LocalAppData)\CustomProjectSystems\Spect.Net.CodeDiscover\</CustomProjectExtensionsPath>
+    <ProjectGuid>68673954-4452-44af-b114-fe12ed7271d8</ProjectGuid>
+  </PropertyGroup>
+  <Import Project="$(CustomProjectExtensionsPath)Spect.Net.CodeDiscover.props" />
+  <ItemGroup>
+    <DisassAnn Include="Annotations.disann" />
+    <SpConf Include="Rom\ZxSpectrum.spconf" />
+    <Rom Include="Rom\ZxSpectrum48.rom" />
+    <DisassAnn Include="Rom\ZxSpectrum48.disann" />
+    <Z80Asm Include="Z80CodeFiles\Code.z80asm" />
+    <Z80Asm Include="ZxBasicFiles\ZXTelnet.zxbas.z80asm">
+      <DependentUpon>ZXTelnet.zxbas</DependentUpon>
+    </Z80Asm>
+    <Z80Test Include="Z80UnitTests\UnitTest.z80test" />
+    <Tzx Include="TapeFiles\Welcome.tzx" />
+  </ItemGroup>
+  <ItemGroup>
+    <ZxBasic Include="ZxBasicFiles\Input40.zxbas" />
+    <ZxBasic Include="ZxBasicFiles\Print40.zxbas" />
+    <ZxBasic Include="ZxBasicFiles\RegisterFunctions.zxbas" />
+    <ZxBasic Include="ZxBasicFiles\ZXTelnet.zxbas" />
+  </ItemGroup>
+  <Import Project="$(CustomProjectExtensionsPath)Spect.Net.CodeDiscover.targets" />
+</Project>

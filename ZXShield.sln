@@ -1,0 +1,62 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29418.71
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ZXShield", "ZXShield\ZXShield.vcxitems", "{1950F67D-A659-447C-ABA3-2A29D88703E8}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Devices", "Devices\Devices.vcxitems", "{F17C190D-3FAA-47F0-9ED2-524DDE73D377}"
+EndProject
+Project("{F16D4249-6279-474E-8826-742E7FF7445C}") = "ZXRegisterManager", "ZXRegisterManager\ZXRegisterManager.z80cdproj", "{568499E4-1DD3-4332-AF1D-6CDC987E4D58}"
+EndProject
+Project("{F16D4249-6279-474E-8826-742E7FF7445C}") = "ZXTelnet", "ZXTelnet\ZXTelnet.z80cdproj", "{68673954-4452-44AF-B114-FE12ED7271D8}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ROMGenerator", "ROMGenerator\ROMGenerator.csproj", "{3F9B3D80-0636-431D-A4D8-CC7DF443A6D3}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ZXComms", "ZXComms\ZXComms.vcxproj", "{7BC89C1E-AA1E-4124-940B-F82E682DF3E9}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ZXBasicROM", "ZXBasicROM\ZXBasicROM.vcxproj", "{C5F80730-F44F-4478-BDAE-6634EFC2CA88}"
+EndProject
+Global
+	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		ZXShield\ZXShield.vcxitems*{1950f67d-a659-447c-aba3-2a29d88703e8}*SharedItemsImports = 9
+		Devices\Devices.vcxitems*{7bc89c1e-aa1e-4124-940b-f82e682df3e9}*SharedItemsImports = 4
+		ZXShield\ZXShield.vcxitems*{7bc89c1e-aa1e-4124-940b-f82e682df3e9}*SharedItemsImports = 4
+		ZXShield\ZXShield.vcxitems*{c5f80730-f44f-4478-bdae-6634efc2ca88}*SharedItemsImports = 4
+		Devices\Devices.vcxitems*{f17c190d-3faa-47f0-9ed2-524dde73d377}*SharedItemsImports = 9
+	EndGlobalSection
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Debug|x86 = Debug|x86
+		Release|Any CPU = Release|Any CPU
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{3F9B3D80-0636-431D-A4D8-CC7DF443A6D3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3F9B3D80-0636-431D-A4D8-CC7DF443A6D3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3F9B3D80-0636-431D-A4D8-CC7DF443A6D3}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{3F9B3D80-0636-431D-A4D8-CC7DF443A6D3}.Debug|x86.Build.0 = Debug|Any CPU
+		{3F9B3D80-0636-431D-A4D8-CC7DF443A6D3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3F9B3D80-0636-431D-A4D8-CC7DF443A6D3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3F9B3D80-0636-431D-A4D8-CC7DF443A6D3}.Release|x86.ActiveCfg = Release|Any CPU
+		{3F9B3D80-0636-431D-A4D8-CC7DF443A6D3}.Release|x86.Build.0 = Release|Any CPU
+		{7BC89C1E-AA1E-4124-940B-F82E682DF3E9}.Debug|Any CPU.ActiveCfg = Debug|Win32
+		{7BC89C1E-AA1E-4124-940B-F82E682DF3E9}.Debug|x86.ActiveCfg = Debug|Win32
+		{7BC89C1E-AA1E-4124-940B-F82E682DF3E9}.Debug|x86.Build.0 = Debug|Win32
+		{7BC89C1E-AA1E-4124-940B-F82E682DF3E9}.Release|Any CPU.ActiveCfg = Release|Win32
+		{7BC89C1E-AA1E-4124-940B-F82E682DF3E9}.Release|x86.ActiveCfg = Release|Win32
+		{7BC89C1E-AA1E-4124-940B-F82E682DF3E9}.Release|x86.Build.0 = Release|Win32
+		{C5F80730-F44F-4478-BDAE-6634EFC2CA88}.Debug|Any CPU.ActiveCfg = Debug|Win32
+		{C5F80730-F44F-4478-BDAE-6634EFC2CA88}.Debug|x86.ActiveCfg = Debug|Win32
+		{C5F80730-F44F-4478-BDAE-6634EFC2CA88}.Debug|x86.Build.0 = Debug|Win32
+		{C5F80730-F44F-4478-BDAE-6634EFC2CA88}.Release|Any CPU.ActiveCfg = Release|Win32
+		{C5F80730-F44F-4478-BDAE-6634EFC2CA88}.Release|x86.ActiveCfg = Release|Win32
+		{C5F80730-F44F-4478-BDAE-6634EFC2CA88}.Release|x86.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {10AA5C22-F01B-4636-97B1-539E55193419}
+	EndGlobalSection
+EndGlobal

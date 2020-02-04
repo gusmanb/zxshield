@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "ROMGenerator": {
+      "commandName": "Project",
+      "commandLineArgs": "48.rom 48rom.h"
+    }
+  }
+}

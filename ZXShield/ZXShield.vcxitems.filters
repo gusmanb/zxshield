@@ -1,0 +1,16 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Text Include="$(MSBuildThisFileDirectory)readme.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="$(MSBuildThisFileDirectory)ZXShield.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)ZXROM.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)ZXPeripheral.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="$(MSBuildThisFileDirectory)ZXShield.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)ZXROM.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)ZXPeripheral.h" />
+  </ItemGroup>
+</Project>

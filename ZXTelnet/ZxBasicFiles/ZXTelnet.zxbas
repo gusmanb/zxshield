@@ -1,0 +1,334 @@
+﻿#include "RegisterFunctions.zxbas"
+#include "Print40.zxbas"
+#include "Input40.zxbas"
+#include <keys.bas>
+REM Defines, prototipos y pijotadas
+
+#define REG_SSID 0
+#define REG_PASS 1
+#define REG_WIFI 2
+#define REG_ADDR 3
+#define REG_PORT 4
+#define REG_TCPS 5
+#define REG_DINP 6
+#define REG_DOUT 7
+#define REG_INFO 8
+
+declare function ConectarWiFi() as ubyte
+declare function ReintentarWiFi() as ubyte
+declare function ConectarTCP() as ubyte
+declare function ReintentarTCP() as ubyte
+'declare function ProcesarDatos(byref Datos as string) as ubyte
+
+REM Codigo principal
+
+cls
+printAt40(0,0)
+ink 0
+paper 5
+bright 1
+border 1
+print40("               ZX TELNET                " + chr$(13))
+ink 0
+paper 7
+bright 0
+
+print40(" " + chr$(13))
+print40("     Bienvenido al cliente de Telnet" + chr$(13))
+print40( "           "+ chr$($7F)+ "2020 El Dr. Gusman")
+print40(chr$(13))
+conectawifi:
+if not ConectarWiFi() then
+    if ReintentarWiFi() then
+        cls
+        printAt40(0,0)
+        goto conectawifi
+    else
+        print40("Bye!")
+        stop
+    end if
+end if
+
+pause 50
+
+cls
+printAt40(0,0)
+
+dim op as ubyte
+
+conectatcp:
+
+if not ConectarTCP() then
+    if ReintentarTCP() then
+        cls
+        printAt40(0,0)
+        goto conectatcp
+    else
+        print40("Bye!")
+        stop
+    end if
+end if
+
+pause 50
+
+cls
+printAt40(0,0)
+
+dim outBuffer as string
+dim status as ubyte
+dim lastKey as string
+dim mLoop as uinteger
+do
+
+    outBuffer = ""
+
+    if ReadStream(REG_DINP, outBuffer) > 0 then 
+        'ProcesarDatos(outBuffer)
+        print40(outBuffer)
+    else 
+
+        mLoop = mLoop + 1
+
+        if mLoop > 100 then
+            mLoop = 0
+            if ReadByte(REG_TCPS, status) then
+                if status <> 2 then
+                    print40("Conexion terminada (" + str(status) + ")"+chr$(13))
+                    if ReintentarTCP() then
+                        cls
+                        printAt40(0,0)
+                        goto conectatcp
+                    else
+                        print40("Bye!")
+                        stop
+                    end if
+                end if
+            end if
+        end if
+    end if
+
+    outBuffer = inkey$
+    
+    if outBuffer <> "" and outBuffer <> lastKey then
+        if outBuffer = chr$(7) then
+            outBuffer = input40(64)
+        else
+            lastKey = outBuffer
+            if outBuffer = chr$(12) then let outBuffer = chr$(8)
+            if outBuffer = " " and MultiKeys(KEYCAPS) then
+                print40("Bye!")
+                stop
+            end if
+        end if
+        WriteStream(REG_DOUT, outBuffer)
+    elseif outBuffer = "" then
+        lastKey = ""
+    end if
+
+loop
+
+        
+REM Cuerpos de funciones
+
+function ConectarWiFi() as ubyte
+
+    print40(chr$(13))
+    print40("-Conectar al WiFi" + chr$(13))
+    print40(chr$(13))
+    enterssid:
+    print40("  Indica el SSID del router" + chr$(13))
+    print40(chr$(13))
+    dim ssid as string = input40(64)
+    if len ssid = 0 then
+        print40("SSID incorrecto" + chr$(13))
+        print40(chr$(13))
+        goto enterssid
+    end if
+
+    enterpass:
+    print40("  Indica el password" + chr$(13))
+    print40(chr$(13))
+    dim pass as string = input40(64)
+    if len pass = 0 then
+        print40("Password incorrecto" + chr$(13))
+        print40(chr$(13))
+        goto enterpass
+    end if
+
+    print40(chr$(13))
+    print40("Conectando..." + chr$(13))
+    print40(chr$(13))
+
+    if NOT_SUCCESS(WriteStream(REG_SSID, ssid)) then 
+        print40("Error enviando datos de SSID" + chr$(13))
+        return 0
+    end if
+
+    if NOT_SUCCESS(WriteStream(REG_PASS, pass)) then
+        print40("Error enviando datos de pass" + chr$(13))
+        return 0
+    end if
+
+    if NOT_SUCCESS(WriteByte(REG_WIFI, 1)) then
+        print40("Error iniciando conexion" + chr$(13))
+        return 0
+    end if
+
+    dim status as ubyte
+
+    do
+
+        if NOT_SUCCESS(ReadByte(REG_WIFI, status)) then 
+            status = 255
+            exit do
+        end if
+
+        if status > 1 then exit do
+
+    loop
+
+    if status = 2 then 
+        print40("Conectado" + chr$(13))
+        return 1
+    else 
+        print40("Error al conectar" + chr$(13))
+        return 0
+    end if
+
+end function
+
+function ReintentarWiFi() as ubyte
+
+retrywifi:
+
+    print40(chr$(13))
+    print40("Que quieres hacer?" + chr$(13))
+    print40("    (r)eintentar conexion" + chr$(13))
+    print40("    (s)alir" + chr$(13))
+    dim sel as string = input40(1)
+
+   if sel = "r" then return 1
+   if sel = "s" then return 0
+
+   cls   
+   printAt40(0,0)
+   print40("Opcion incorrecta" + chr$(13))
+   
+   goto retrywifi
+
+end function
+
+function ConectarTCP() as ubyte
+
+    print40(chr$(13))
+    print40("-Conectar al servidor" + chr$(13))
+    print40(chr$(13))
+    enteraddress:
+    print40("  Indica la direccion" + chr$(13))
+    print40(chr$(13))
+    dim address as string = input40(64)
+    if len address = 0 then
+        print40("Servidor incorrecto" + chr$(13))
+        print40(chr$(13))
+        goto enteraddress
+    end if
+
+    enterport:
+    print40("  Indica el puerto" + chr$(13))
+    print40(chr$(13))
+    dim sPort as string = input40(64)
+    if len sPort = 0 then
+        print40("Puerto incorrecto" + chr$(13))
+        print40(chr$(13))
+        goto enterport
+    end if
+
+    dim port as uinteger = val(sPort)
+    if port = 0 then
+        print40("Puerto incorrecto" + chr$(13))
+        print40(chr$(13))
+        goto enterport
+    end if
+
+    print40(chr$(13))
+    print40("Conectando..." + chr$(13))
+    print40(chr$(13))
+
+    if NOT_SUCCESS(WriteStream(REG_ADDR, address)) then 
+        print40("Error enviando direccion" + chr$(13))
+        return 0
+    end if
+
+    if NOT_SUCCESS(WriteInteger(REG_PORT, port)) then
+        print40("Error enviando puerto" + chr$(13))
+        return 0
+    end if
+
+    if NOT_SUCCESS(WriteByte(REG_TCPS, 1)) then
+        print40("Error iniciando conexion" + chr$(13))
+        return 0
+    end if
+
+    dim status as ubyte
+
+    do
+
+        if NOT_SUCCESS(ReadByte(REG_TCPS, status)) then 
+            status = 255
+            exit do
+        end if
+
+        if status > 1 then exit do
+
+    loop
+
+    ReadByte(REG_TCPS, status)
+
+    if status = 2 then 
+        print40("Conectado" + chr$(13))
+        return 1
+    else 
+        print40("Error al conectar" + chr$(13))
+        return 0
+    end if
+
+end function
+
+function ReintentarTCP() as ubyte
+
+retrytcp:
+
+    print40(chr$(13))
+    print40("Que quieres hacer?" + chr$(13))
+    print40("    (r)eintentar conexion" + chr$(13))
+    print40("    (s)alir" + chr$(13))
+    dim sel as string = input40(1)
+
+   if sel = "r" then return 1
+   if sel = "s" then return 0
+
+   cls   
+   printAt40(0,0)
+   print40("Opcion incorrecta" + chr$(13))
+   
+   goto retrytcp
+
+end function
+
+'function ProcesarDatos(byref Datos as string) as ubyte
+
+'dim buf as string
+'dim lon as ubyte = len Datos
+'dim buc as ubyte
+'for buc = 0 to lon - 1
+'    dim codeC as ubyte = code Datos(buc to buc)
+'    if (codeC > $1F AND codeC < $A5)_
+'         or codeC = 6_
+'         or (codeC > $07 AND codeC < $0A)_
+'         or (codeC > $0C AND codeC < $0F)_
+'         then buf = buf + chr$(codeC)
+'next buc
+'
+'Datos = buf
+'
+'end function
