@@ -196,7 +196,7 @@ void ZXPeripheral::DataReady(byte Port, byte Write)
 		else
 		{
 			if (ReadRequest != NULL)
-				ZXShield::OutputByte(ReadRequest());
+				ZXShield::OutputPeripheralByte(ReadRequest());
 			else
 				ZXShield::ReleaseTrap();
 		}
@@ -253,9 +253,9 @@ void ZXPeripheral::ActivateRegister(byte RegNumber)
 void ZXPeripheral::SendRegisterInfo()
 {
 	if (CurrentRegister == NULL)
-		ZXShield::OutputByte(0xFF);
+		ZXShield::OutputPeripheralByte(0xFF);
 	else
-		ZXShield::OutputByte(CurrentRegister->Config);
+		ZXShield::OutputPeripheralByte(CurrentRegister->Config);
 }
 
 void ZXPeripheral::SetRegisterLength(byte Data)
@@ -279,11 +279,11 @@ void ZXPeripheral::GetRegisterLength()
 
 	if (CurrentRegister == NULL)
 	{
-		ZXShield::OutputByte(0xFF);
+		ZXShield::OutputPeripheralByte(0xFF);
 	}
 	else if (CurrentRegister->LockCount > 0)
 	{
-		ZXShield::OutputByte(0xFA);
+		ZXShield::OutputPeripheralByte(0xFA);
 	}
 	else
 	{
@@ -291,13 +291,13 @@ void ZXPeripheral::GetRegisterLength()
 		{
 		case BYTE_R:
 
-			ZXShield::OutputByte((byte)1);
+			ZXShield::OutputPeripheralByte((byte)1);
 
 			break;
 
 		case INT_R:
 
-			ZXShield::OutputByte((byte)4);
+			ZXShield::OutputPeripheralByte((byte)4);
 
 			break;
 
@@ -306,7 +306,7 @@ void ZXPeripheral::GetRegisterLength()
 			if (CurrentStream->BeginSizeRead != NULL)
 				CurrentStream->BeginSizeRead(CurrentRegister);
 
-			ZXShield::OutputByte(CurrentStream->BufferLength);
+			ZXShield::OutputPeripheralByte(CurrentStream->BufferLength);
 
 			if (CurrentStream->EndSizeRead != NULL)
 				CurrentStream->EndSizeRead(CurrentRegister);
@@ -315,7 +315,7 @@ void ZXPeripheral::GetRegisterLength()
 
 		default:
 
-			ZXShield::OutputByte(0xFF);
+			ZXShield::OutputPeripheralByte(0xFF);
 			break;
 		}
 	}
@@ -379,7 +379,7 @@ void ZXPeripheral::WriteRegister(byte Value)
 void ZXPeripheral::ReadRegister()
 {
 	if (CurrentRegister == NULL || !CONFIG_READ(CurrentRegister->Config) || CurrentRegister->LockCount > 0)
-		ZXShield::OutputByte(0xFF);
+		ZXShield::OutputPeripheralByte(0xFF);
 	else
 	{
 		switch (CONFIG_TYPE(CurrentRegister->Config))
@@ -389,7 +389,7 @@ void ZXPeripheral::ReadRegister()
 			if (CurrentByte->BeginRegisterRead != NULL)
 				CurrentByte->BeginRegisterRead(CurrentRegister);
 
-			ZXShield::OutputByte(CurrentByte->Value);
+			ZXShield::OutputPeripheralByte(CurrentByte->Value);
 
 			if (CurrentByte->EndRegisterRead != NULL)
 				CurrentByte->EndRegisterRead(CurrentRegister);
@@ -398,13 +398,13 @@ void ZXPeripheral::ReadRegister()
 		case INT_R:
 
 			if (CurrentInt->Pointer >= 4)
-				ZXShield::OutputByte(0xFF);
+				ZXShield::OutputPeripheralByte(0xFF);
 			else
 			{
 				if (CurrentInt->Pointer == 0 && CurrentInt->BeginRegisterRead != NULL)
 					CurrentInt->BeginRegisterRead(CurrentRegister);
 
-				ZXShield::OutputByte(CurrentInt->Buffer[CurrentInt->Pointer++]);
+				ZXShield::OutputPeripheralByte(CurrentInt->Buffer[CurrentInt->Pointer++]);
 
 				if (CurrentInt->Pointer == 4 && CurrentInt->EndRegisterRead != NULL)
 					CurrentInt->EndRegisterRead(CurrentRegister);
@@ -414,13 +414,13 @@ void ZXPeripheral::ReadRegister()
 		case STREAM_R:
 
 			if (CurrentStream->Pointer == CurrentStream->BufferLength)
-				ZXShield::OutputByte(0xFF);
+				ZXShield::OutputPeripheralByte(0xFF);
 			else
 			{
 				if (CurrentStream->Pointer == 0 && CurrentStream->BeginRegisterRead != NULL)
 					CurrentStream->BeginRegisterRead(CurrentRegister);
 
-				ZXShield::OutputByte(CurrentStream->Buffer[CurrentStream->Pointer++]);
+				ZXShield::OutputPeripheralByte(CurrentStream->Buffer[CurrentStream->Pointer++]);
 
 				if (CurrentStream->Pointer == CurrentStream->BufferLength && CurrentStream->EndRegisterRead != NULL)
 					CurrentStream->EndRegisterRead(CurrentRegister);
@@ -430,7 +430,7 @@ void ZXPeripheral::ReadRegister()
 
 		default:
 
-			ZXShield::OutputByte(0xFF);
+			ZXShield::OutputPeripheralByte(0xFF);
 
 			break;
 		}

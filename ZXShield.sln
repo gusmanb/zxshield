@@ -22,9 +22,15 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		README.MD = README.MD
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ZXBasicPeripheral", "ZXBasicPeripheral\ZXBasicPeripheral.vcxproj", "{19F6D799-8CC6-4709-88A2-E6BA0F0348CF}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ZXSwappableROM", "ZXSwappableROM\ZXSwappableROM.vcxproj", "{4F4D454D-25BF-4663-9AEE-E180D05559DA}"
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		ZXShield\ZXShield.vcxitems*{1950f67d-a659-447c-aba3-2a29d88703e8}*SharedItemsImports = 9
+		ZXShield\ZXShield.vcxitems*{19f6d799-8cc6-4709-88a2-e6ba0f0348cf}*SharedItemsImports = 4
+		ZXShield\ZXShield.vcxitems*{4f4d454d-25bf-4663-9aee-e180d05559da}*SharedItemsImports = 4
 		Devices\Devices.vcxitems*{7bc89c1e-aa1e-4124-940b-f82e682df3e9}*SharedItemsImports = 4
 		ZXShield\ZXShield.vcxitems*{7bc89c1e-aa1e-4124-940b-f82e682df3e9}*SharedItemsImports = 4
 		ZXShield\ZXShield.vcxitems*{c5f80730-f44f-4478-bdae-6634efc2ca88}*SharedItemsImports = 4
@@ -57,6 +63,18 @@ Global
 		{C5F80730-F44F-4478-BDAE-6634EFC2CA88}.Release|Any CPU.ActiveCfg = Release|Win32
 		{C5F80730-F44F-4478-BDAE-6634EFC2CA88}.Release|x86.ActiveCfg = Release|Win32
 		{C5F80730-F44F-4478-BDAE-6634EFC2CA88}.Release|x86.Build.0 = Release|Win32
+		{19F6D799-8CC6-4709-88A2-E6BA0F0348CF}.Debug|Any CPU.ActiveCfg = Debug|Win32
+		{19F6D799-8CC6-4709-88A2-E6BA0F0348CF}.Debug|x86.ActiveCfg = Debug|Win32
+		{19F6D799-8CC6-4709-88A2-E6BA0F0348CF}.Debug|x86.Build.0 = Debug|Win32
+		{19F6D799-8CC6-4709-88A2-E6BA0F0348CF}.Release|Any CPU.ActiveCfg = Release|Win32
+		{19F6D799-8CC6-4709-88A2-E6BA0F0348CF}.Release|x86.ActiveCfg = Release|Win32
+		{19F6D799-8CC6-4709-88A2-E6BA0F0348CF}.Release|x86.Build.0 = Release|Win32
+		{4F4D454D-25BF-4663-9AEE-E180D05559DA}.Debug|Any CPU.ActiveCfg = Debug|Win32
+		{4F4D454D-25BF-4663-9AEE-E180D05559DA}.Debug|x86.ActiveCfg = Debug|Win32
+		{4F4D454D-25BF-4663-9AEE-E180D05559DA}.Debug|x86.Build.0 = Debug|Win32
+		{4F4D454D-25BF-4663-9AEE-E180D05559DA}.Release|Any CPU.ActiveCfg = Release|Win32
+		{4F4D454D-25BF-4663-9AEE-E180D05559DA}.Release|x86.ActiveCfg = Release|Win32
+		{4F4D454D-25BF-4663-9AEE-E180D05559DA}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

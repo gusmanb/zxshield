@@ -12,8 +12,8 @@ void ZXROM::SetROMHandler(ROM_HANDLER Handler)
 
 void ZXROM::DataReady(unsigned int Address, byte Operation)
 {
-	if (data != NULL && Operation)
-		ZXShield::OutputByte(pgm_read_byte(&data[Address]));
+	if (data != NULL && !Operation)
+		ZXShield::OutputROMByte(pgm_read_byte(&data[Address]));
 	else if (handler != NULL)
 		handler(Address, Operation);
 	else

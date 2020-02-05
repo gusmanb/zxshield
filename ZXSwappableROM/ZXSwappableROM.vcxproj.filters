@@ -15,16 +15,16 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <None Include="ZXBasicROM.ino" />
+    <None Include="ZXSwappableROM.ino" />
     <None Include="src\arduino folders read me.txt">
       <Filter>Misc Files</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="__vm\.ZXBasicROM.vsarduino.h">
+    <ClInclude Include="48gusrom.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="48gusrom.h">
+    <ClInclude Include="__vm\.ZXSwappableROM.vsarduino.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

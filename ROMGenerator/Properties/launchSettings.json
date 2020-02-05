@@ -2,7 +2,7 @@
   "profiles": {
     "ROMGenerator": {
       "commandName": "Project",
-      "commandLineArgs": "48.rom 48rom.h"
+      "commandLineArgs": "48gus.rom 48gusrom.h"
     }
   }
 }

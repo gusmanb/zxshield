@@ -4,10 +4,10 @@
 //Canales de IO DESDE el Spectrum:
 /*
 	0: Selector de registro. Al escribir se activa un registro, al leer se lee la info del registro seleccionado
-	1: Longitud de registro. Si el registro es de longitud fija leer nos indica el tamaño, si es variable el tamaño de datos
+	2: Longitud de registro. Si el registro es de longitud fija leer nos indica el tamaño, si es variable el tamaño de datos
 	   disponibles; escribir en él no hace nada si el registro es fijo y cambia el tamaño de datios si es variable
-	2: Registro. Lee o escribe dentro del registro activo
-	3: Canal libre, se transfiere el control a la app 
+	4: Registro. Lee o escribe dentro del registro activo
+	6: Canal libre, se transfiere el control a la app 
 */
 
 #define BYTE_R 0

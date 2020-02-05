@@ -7,7 +7,6 @@ void ZXShield::PeripheralInterrupt()
 {
 	byte port = ADDR_L_PORT & ADDR_L_PORT_MASK;
 	byte op = ADDR_H_OP_PORT & OP_MASK;
-
 	Peripheral.DataReady(port, op);
 }
 
@@ -17,6 +16,5 @@ void ZXShield::ROMInterrupt()
 	byte op = ADDR_H_OP_PORT;
 	addr |= (op & ADDR_H_MASK) << 8;
 	op = op & OP_MASK;
-
 	ROM.DataReady(addr, op);
 }

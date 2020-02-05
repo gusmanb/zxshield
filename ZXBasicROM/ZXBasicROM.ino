@@ -5,7 +5,7 @@
 */
 
 #include "ZXShield.h"
-#include "48rom.h"
+#include "48gusrom.h"
 
 // the setup function runs once when you press reset or power the board
 void setup() {

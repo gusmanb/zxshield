@@ -38,12 +38,12 @@
 #define ENPERI_DIR DDRD
 #define ENPERI_DIRMASK B10000000
 #define ENPERI_PORT PORTD
-#define ENPERI_HI_MASK B00000001
-#define ENPERI_LO_MASK B11111110
+#define ENPERI_HI_MASK B10000000
+#define ENPERI_LO_MASK B01111111
 
-#define INT_DIR DDRE
 #define INT_PERI_PIN 2
 #define INT_ROM_PIN 3
+#define RAISE_INT_PIN 5
 
 #define PIN_HI(PORT, HI_MASK) ((PORT) |= (HI_MASK))
 #define PIN_LO(PORT, LO_MASK) ((PORT) &= (LO_MASK))
@@ -53,6 +53,9 @@
 
 #define SIGNAL_NMI() (PIN_LO(CTL_PORT, NMI_LO_MASK))
 #define FREE_NMI() (PIN_HI(CTL_PORT, NMI_HI_MASK))
+
+#define SIGNAL_INT() (digitalWrite(RAISE_INT_PIN, 0));
+#define FREE_INT() (digitalWrite(RAISE_INT_PIN, 1))
 
 #define SIGNAL_RESET() (PIN_LO(RST_PORT, RST_LO_MASK))
 #define FREE_RESET() (PIN_HI(RST_PORT, RST_HI_MASK))
@@ -76,11 +79,13 @@ public:
 	static inline void Initialize();
 
 	static inline byte InputByte();
-	static inline void OutputByte(byte Value);
+	static inline void OutputPeripheralByte(byte Value);
+	static inline void OutputROMByte(byte Value);
 	static inline void FastOutputByte(byte Value);
 	static inline void ReleaseTrap();
 	static inline void ResetCPU();
 	static inline void NMI();
+	static inline void INT();
 
 	static inline void EnablePeripheral();
 	static inline void DisablePeripheral();
@@ -100,17 +105,23 @@ private:
 inline void ZXShield::Initialize()
 {
 	ADDR_L_DIR = DIR_IN;
-	ADDR_H_OP_PORT = ADDR_H_OP_DIRMASK;
+	ADDR_H_OP_DIR = ADDR_H_OP_DIRMASK;
 	DATA_DIR = DIR_IN;
 	CTL_DIR = CTL_DIRMASK;
 	ENPERI_DIR = ENPERI_DIRMASK;
 
+	//TODO: Create masks and so on
+	pinMode(RAISE_INT_PIN, OUTPUT);
+
+	FREE_INT();
 	FREE_NMI();
 	FREE_RESET();
 
 	REARM_CPU_TRAP();
 	RELEASE_CPU_TRAP();
 	REARM_CPU_TRAP();
+	interrupts();
+
 }
 
 inline byte ZXShield::InputByte()
@@ -122,12 +133,28 @@ inline byte ZXShield::InputByte()
 	return value;
 }
 
-inline void ZXShield::OutputByte(byte Value)
+inline void ZXShield::OutputPeripheralByte(byte Value)
 {
 	DATA_DIR = DIR_OUT;
 	DATA_OUT = Value;
 	RELEASE_CPU_TRAP();
 	REARM_CPU_TRAP();
+	asm("nop");
+	asm("nop");
+	asm("nop");
+	DATA_DIR = DIR_IN;
+}
+
+inline void ZXShield::OutputROMByte(byte Value)
+{
+	DATA_DIR = DIR_OUT;
+	DATA_OUT = Value;
+	RELEASE_CPU_TRAP();
+	REARM_CPU_TRAP();
+	asm("nop");
+	asm("nop");
+	asm("nop");
+	asm("nop");
 	asm("nop");
 	asm("nop");
 	DATA_DIR = DIR_IN;
@@ -151,12 +178,10 @@ inline void ZXShield::ReleaseTrap()
 inline void ZXShield::ResetCPU()
 {
 	SIGNAL_RESET();
-	asm("nop");
-	asm("nop");
-	asm("nop");
-	asm("nop");
-	asm("nop");
-	asm("nop");
+	delayMicroseconds(100);
+	REARM_CPU_TRAP();
+	RELEASE_CPU_TRAP();
+	REARM_CPU_TRAP();
 	FREE_RESET();
 }
 
@@ -170,27 +195,37 @@ inline void ZXShield::NMI()
 	FREE_NMI();
 }
 
+inline void ZXShield::INT()
+{
+	SIGNAL_INT();
+	asm("nop");
+	asm("nop");
+	asm("nop");
+	asm("nop");
+	FREE_INT();
+}
+
 inline void ZXShield::EnablePeripheral()
 {
-	attachInterrupt(INT_PERI_PIN, PeripheralInterrupt, FALLING);
+	attachInterrupt(digitalPinToInterrupt(INT_PERI_PIN), PeripheralInterrupt, FALLING);
 	ENABLE_PERIPHERAL();
 }
 
 inline void ZXShield::DisablePeripheral()
 {
-	detachInterrupt(INT_PERI_PIN);
+	detachInterrupt(digitalPinToInterrupt(INT_PERI_PIN));
 	DISABLE_PERIPHERAL();
 }
 
 inline void ZXShield::EnableROM()
 {
-	attachInterrupt(INT_ROM_PIN, ROMInterrupt, FALLING);
+	attachInterrupt(digitalPinToInterrupt(INT_ROM_PIN), ROMInterrupt, FALLING);
 	ENABLE_ROM();
 }
 
 inline void ZXShield::EnableROMWithNMI()
 {
-	attachInterrupt(INT_ROM_PIN, ROMInterrupt, FALLING);
+	attachInterrupt(digitalPinToInterrupt(INT_ROM_PIN), ROMInterrupt, FALLING);
 	byte status = CTL_PORT;
 	status &= NMI_LO_MASK;
 	status |= ENROM_HI_MASK;
@@ -205,6 +240,6 @@ inline void ZXShield::EnableROMWithNMI()
 
 inline void ZXShield::DisableROM()
 {
-	detachInterrupt(INT_ROM_PIN);
+	detachInterrupt(digitalPinToInterrupt(INT_ROM_PIN));
 	DISABLE_ROM();
 }

@@ -265,9 +265,9 @@ __LABEL20:
 	ld h, a
 	pop af
 	or a
-	jr z, __LABEL178
+	jr z, __LABEL163
 	ld a, h
-__LABEL178:
+__LABEL163:
 	or a
 	jp z, __LABEL31
 	ld de, __LABEL33
@@ -307,9 +307,9 @@ __LABEL38:
 	ld h, a
 	pop af
 	or a
-	jr z, __LABEL179
+	jr z, __LABEL164
 	ld a, h
-__LABEL179:
+__LABEL164:
 	or a
 	jp z, __LABEL41
 	ld hl, __LABEL11
@@ -349,83 +349,7 @@ __LABEL17:
 	ld c, l
 	jp __END_PROGRAM
 _EnableRegister:
-	push ix
-	ld ix, 0
-	add ix, sp
-	ld hl, 0
-	push hl
-	ld a, (ix+5)
-	ld bc, 241
-	out (c), a
-	ld bc, 241
-	in a, (c)
-	ld (ix-1), a
-	sub 255
-	jp nz, __LABEL45
-	ld a, 255
-	jp _EnableRegister__leave
-__LABEL45:
-	ld a, (ix-1)
-	push af
-	ld h, 3
-	pop af
-	and h
-	sub (ix+7)
-	jp z, __LABEL47
-	ld a, 254
-	jp _EnableRegister__leave
-__LABEL47:
-	ld a, (ix+9)
-	or a
-	jp nz, __LABEL48
-	ld a, (ix-1)
-	push af
-	ld h, 4
-	pop af
-	and h
-	jp nz, __LABEL51
-	ld a, 253
-	jp _EnableRegister__leave
-__LABEL51:
-	jp __LABEL49
-__LABEL48:
-	ld a, (ix-1)
-	push af
-	ld h, 8
-	pop af
-	and h
-	jp nz, __LABEL53
-	ld a, 253
-	jp _EnableRegister__leave
-__LABEL53:
-__LABEL49:
-__LABEL54:
-	ld bc, 243
-	in a, (c)
-	ld (ix-2), a
-	sub 250
-	jp nz, __LABEL58
-	ld hl, 1
-	call __PAUSE
-__LABEL58:
-__LABEL56:
-	ld a, (ix-2)
-	sub 250
-	jp z, __LABEL54
-__LABEL55:
-	ld a, (ix-2)
-_EnableRegister__leave:
-	ld sp, ix
-	pop ix
-	exx
-	pop hl
-	pop bc
-	pop bc
-	ex (sp), hl
-	exx
-	ret
-_ASMEnableRegister:
-#line 52
+#line 27
 		POP hl
 		POP bc
 		POP de
@@ -469,8 +393,8 @@ checklock:
 		JR Z, checklock
 		XOR 250
 		RET
-#line 95
-_ASMEnableRegister__leave:
+#line 70
+_EnableRegister__leave:
 	ret
 _ReadByte:
 	push ix
@@ -484,17 +408,17 @@ _ReadByte:
 	xor a
 	push af
 	ld a, (ix+5)
-	call _ASMEnableRegister
+	call _EnableRegister
 	ld (ix-1), a
 	push af
 	ld h, 0
 	pop af
 	call __LTI8
 	or a
-	jp z, __LABEL60
+	jp z, __LABEL45
 	ld a, 255
 	jp _ReadByte__leave
-__LABEL60:
+__LABEL45:
 	ld bc, 245
 	in a, (c)
 	ld h, (ix+7)
@@ -524,17 +448,17 @@ _ReadInteger:
 	ld a, 1
 	push af
 	ld a, (ix+5)
-	call _ASMEnableRegister
+	call _EnableRegister
 	ld (ix-1), a
 	push af
 	ld h, 0
 	pop af
 	call __LTI8
 	or a
-	jp z, __LABEL62
+	jp z, __LABEL47
 	ld a, 255
 	jp _ReadInteger__leave
-__LABEL62:
+__LABEL47:
 	ld bc, 245
 	in a, (c)
 	ld l, a
@@ -548,9 +472,9 @@ __LABEL62:
 	ld e, (ix-3)
 	ld d, (ix-2)
 	ld b, 24
-__LABEL180:
+__LABEL165:
 	call __SHL32
-	djnz __LABEL180
+	djnz __LABEL165
 	ld bc, 6
 	call __PISTORE32
 	ld bc, 245
@@ -571,9 +495,9 @@ __LABEL180:
 	ld e, (ix-3)
 	ld d, (ix-2)
 	ld b, 16
-__LABEL181:
+__LABEL166:
 	call __SHL32
-	djnz __LABEL181
+	djnz __LABEL166
 	call __BOR32
 	ld bc, 6
 	call __PISTORE32
@@ -595,9 +519,9 @@ __LABEL181:
 	ld e, (ix-3)
 	ld d, (ix-2)
 	ld b, 8
-__LABEL182:
+__LABEL167:
 	call __SHL32
-	djnz __LABEL182
+	djnz __LABEL167
 	call __BOR32
 	ld bc, 6
 	call __PISTORE32
@@ -644,21 +568,21 @@ _ReadStream:
 	ld a, 2
 	push af
 	ld a, (ix+5)
-	call _ASMEnableRegister
+	call _EnableRegister
 	ld (ix-1), a
 	push af
 	ld h, 0
 	pop af
 	call __LTI8
 	or a
-	jp z, __LABEL64
+	jp z, __LABEL49
 	ld a, 255
 	jp _ReadStream__leave
-__LABEL64:
+__LABEL49:
 	ld (ix-3), 1
 	ld (ix-2), 0
-	jp __LABEL65
-__LABEL68:
+	jp __LABEL50
+__LABEL53:
 	ld h, (ix+7)
 	ld l, (ix+6)
 	ld c, (hl)
@@ -682,13 +606,13 @@ __LABEL68:
 	ld e, l
 	ld bc, 6
 	call __PISTORE_STR2
-__LABEL69:
+__LABEL54:
 	ld l, (ix-3)
 	ld h, (ix-2)
 	inc hl
 	ld (ix-3), l
 	ld (ix-2), h
-__LABEL65:
+__LABEL50:
 	ld l, (ix-3)
 	ld h, (ix-2)
 	push hl
@@ -700,8 +624,8 @@ __LABEL65:
 	pop de
 	or a
 	sbc hl, de
-	jp nc, __LABEL68
-__LABEL67:
+	jp nc, __LABEL53
+__LABEL52:
 	ld a, (ix-1)
 _ReadStream__leave:
 	ld sp, ix
@@ -724,17 +648,17 @@ _WriteByte:
 	xor a
 	push af
 	ld a, (ix+5)
-	call _ASMEnableRegister
+	call _EnableRegister
 	ld (ix-1), a
 	push af
 	ld h, 0
 	pop af
 	call __LTI8
 	or a
-	jp z, __LABEL71
+	jp z, __LABEL56
 	ld a, 255
 	jp _WriteByte__leave
-__LABEL71:
+__LABEL56:
 	ld a, (ix+7)
 	ld bc, 245
 	out (c), a
@@ -760,25 +684,25 @@ _WriteInteger:
 	ld a, 1
 	push af
 	ld a, (ix+5)
-	call _ASMEnableRegister
+	call _EnableRegister
 	ld (ix-1), a
 	push af
 	ld h, 0
 	pop af
 	call __LTI8
 	or a
-	jp z, __LABEL73
+	jp z, __LABEL58
 	ld a, 255
 	jp _WriteInteger__leave
-__LABEL73:
+__LABEL58:
 	ld l, (ix+6)
 	ld h, (ix+7)
 	ld e, (ix+8)
 	ld d, (ix+9)
 	ld b, 24
-__LABEL183:
+__LABEL168:
 	call __SHRL32
-	djnz __LABEL183
+	djnz __LABEL168
 	push de
 	push hl
 	ld de, 0
@@ -792,9 +716,9 @@ __LABEL183:
 	ld e, (ix+8)
 	ld d, (ix+9)
 	ld b, 16
-__LABEL184:
+__LABEL169:
 	call __SHRL32
-	djnz __LABEL184
+	djnz __LABEL169
 	push de
 	push hl
 	ld de, 0
@@ -808,9 +732,9 @@ __LABEL184:
 	ld e, (ix+8)
 	ld d, (ix+9)
 	ld b, 8
-__LABEL185:
+__LABEL170:
 	call __SHRL32
-	djnz __LABEL185
+	djnz __LABEL170
 	push de
 	push hl
 	ld de, 0
@@ -854,17 +778,17 @@ _WriteStream:
 	ld a, 2
 	push af
 	ld a, (ix+5)
-	call _ASMEnableRegister
+	call _EnableRegister
 	ld (ix-1), a
 	push af
 	ld h, 0
 	pop af
 	call __LTI8
 	or a
-	jp z, __LABEL75
+	jp z, __LABEL60
 	ld a, 255
 	jp _WriteStream__leave
-__LABEL75:
+__LABEL60:
 	ld h, (ix+7)
 	ld l, (ix+6)
 	ld c, (hl)
@@ -878,21 +802,21 @@ __LABEL75:
 	ld a, 64
 	pop hl
 	cp h
-	jp nc, __LABEL77
+	jp nc, __LABEL62
 	ld a, 254
 	jp _WriteStream__leave
-__LABEL77:
+__LABEL62:
 	ld a, (ix-1)
 	sub (ix-2)
-	jp z, __LABEL79
+	jp z, __LABEL64
 	ld a, (ix-2)
 	ld bc, 243
 	out (c), a
-__LABEL79:
+__LABEL64:
 	ld (ix-4), 0
 	ld (ix-3), 0
-	jp __LABEL80
-__LABEL83:
+	jp __LABEL65
+__LABEL68:
 	ld h, (ix+7)
 	ld l, (ix+6)
 	ld c, (hl)
@@ -912,13 +836,13 @@ __LABEL83:
 	call __ASC
 	ld bc, 245
 	out (c), a
-__LABEL84:
+__LABEL69:
 	ld l, (ix-4)
 	ld h, (ix-3)
 	inc hl
 	ld (ix-4), l
 	ld (ix-3), h
-__LABEL80:
+__LABEL65:
 	ld l, (ix-4)
 	ld h, (ix-3)
 	push hl
@@ -929,8 +853,8 @@ __LABEL80:
 	pop de
 	or a
 	sbc hl, de
-	jp nc, __LABEL83
-__LABEL82:
+	jp nc, __LABEL68
+__LABEL67:
 	ld a, 1
 _WriteStream__leave:
 	ld sp, ix
@@ -1490,26 +1414,26 @@ _input40:
 	pop af
 	or h
 	ld (23611), a
-__LABEL85:
+__LABEL70:
 	call _PRIVATEInputShowCursor42
 	xor a
 	ld (_input40_LastK), a
-__LABEL88:
-__LABEL90:
+__LABEL73:
+__LABEL75:
 	ld a, (_input40_LastK)
 	or a
-	jp z, __LABEL88
-__LABEL89:
+	jp z, __LABEL73
+__LABEL74:
 	call _PRIVATEInputHideCursor42
 	ld a, (_input40_LastK)
 	sub 12
-	jp nz, __LABEL91
+	jp nz, __LABEL76
 	ld l, (ix-2)
 	ld h, (ix-1)
 	call __STRLEN
 	ld a, h
 	or l
-	jp z, __LABEL94
+	jp z, __LABEL79
 	ld l, (ix-2)
 	ld h, (ix-1)
 	call __STRLEN
@@ -1518,12 +1442,12 @@ __LABEL89:
 	pop hl
 	or a
 	sbc hl, de
-	jp nz, __LABEL95
+	jp nz, __LABEL80
 	ld de, __LABEL18
 	ld bc, -2
 	call __PSTORE_STR
-	jp __LABEL96
-__LABEL95:
+	jp __LABEL81
+__LABEL80:
 	ld l, (ix-2)
 	ld h, (ix-1)
 	push hl
@@ -1541,14 +1465,14 @@ __LABEL95:
 	ld e, l
 	ld bc, -2
 	call __PSTORE_STR2
-__LABEL96:
+__LABEL81:
 	ld hl, __LABEL39
 	call __LOADSTR
 	push hl
 	call _print40
-__LABEL94:
-	jp __LABEL92
-__LABEL91:
+__LABEL79:
+	jp __LABEL77
+__LABEL76:
 	ld a, (_input40_LastK)
 	sub 32
 	ccf
@@ -1568,11 +1492,11 @@ __LABEL91:
 	ld h, a
 	pop af
 	or a
-	jr z, __LABEL186
+	jr z, __LABEL171
 	ld a, h
-__LABEL186:
+__LABEL171:
 	or a
-	jp z, __LABEL98
+	jp z, __LABEL83
 	ld l, (ix-2)
 	ld h, (ix-1)
 	push hl
@@ -1597,17 +1521,17 @@ __LABEL186:
 	call CHR
 	push hl
 	call _print40
-__LABEL98:
-__LABEL92:
-__LABEL87:
+__LABEL83:
+__LABEL77:
+__LABEL72:
 	ld a, (_input40_LastK)
 	sub 13
-	jp nz, __LABEL85
-__LABEL86:
+	jp nz, __LABEL70
+__LABEL71:
 	ld (ix-4), 1
 	ld (ix-3), 0
-	jp __LABEL99
-__LABEL102:
+	jp __LABEL84
+__LABEL87:
 	ld a, 8
 	push af
 	ld hl, 1
@@ -1639,13 +1563,13 @@ __LABEL102:
 	pop hl
 	push hl
 	call _print40
-__LABEL103:
+__LABEL88:
 	ld l, (ix-4)
 	ld h, (ix-3)
 	inc hl
 	ld (ix-4), l
 	ld (ix-3), h
-__LABEL99:
+__LABEL84:
 	ld l, (ix-4)
 	ld h, (ix-3)
 	push hl
@@ -1655,8 +1579,8 @@ __LABEL99:
 	pop de
 	or a
 	sbc hl, de
-	jp nc, __LABEL102
-__LABEL101:
+	jp nc, __LABEL87
+__LABEL86:
 	ld l, (ix-2)
 	ld h, (ix-1)
 	call __LOADSTR
@@ -1680,7 +1604,7 @@ _PRIVATEInputShowCursor42:
 	call OVER
 	call COPY_ATTR
 	ld de, __LABEL39
-	ld hl, __LABEL104
+	ld hl, __LABEL89
 	call __ADDSTR
 	push hl
 	call _print40
@@ -1707,16 +1631,16 @@ _GetKey:
 	ld hl, 0
 	push hl
 	inc sp
-__LABEL105:
+__LABEL90:
 	call INKEY
 	ld a, 1
 	call __ASC
 	ld (ix-1), a
-__LABEL107:
+__LABEL92:
 	ld a, (ix-1)
 	or a
-	jp z, __LABEL105
-__LABEL106:
+	jp z, __LABEL90
+__LABEL91:
 	ld a, (ix-1)
 _GetKey__leave:
 	ld sp, ix
@@ -1770,7 +1694,7 @@ _ConectarWiFi:
 	push hl
 	call _print40
 	ld de, __LABEL1
-	ld hl, __LABEL108
+	ld hl, __LABEL93
 	call __ADDSTR
 	push hl
 	call _print40
@@ -1780,7 +1704,7 @@ _ConectarWiFi:
 	call _print40
 __LABEL__enterssid:
 	ld de, __LABEL1
-	ld hl, __LABEL109
+	ld hl, __LABEL94
 	call __ADDSTR
 	push hl
 	call _print40
@@ -1803,9 +1727,9 @@ __LABEL__enterssid:
 	pop hl
 	or a
 	sbc hl, de
-	jp nz, __LABEL111
+	jp nz, __LABEL96
 	ld de, __LABEL1
-	ld hl, __LABEL112
+	ld hl, __LABEL97
 	call __ADDSTR
 	push hl
 	call _print40
@@ -1814,10 +1738,10 @@ __LABEL__enterssid:
 	push hl
 	call _print40
 	jp __LABEL__enterssid
-__LABEL111:
+__LABEL96:
 __LABEL__enterpass:
 	ld de, __LABEL1
-	ld hl, __LABEL113
+	ld hl, __LABEL98
 	call __ADDSTR
 	push hl
 	call _print40
@@ -1840,9 +1764,9 @@ __LABEL__enterpass:
 	pop hl
 	or a
 	sbc hl, de
-	jp nz, __LABEL115
+	jp nz, __LABEL100
 	ld de, __LABEL1
-	ld hl, __LABEL116
+	ld hl, __LABEL101
 	call __ADDSTR
 	push hl
 	call _print40
@@ -1851,13 +1775,13 @@ __LABEL__enterpass:
 	push hl
 	call _print40
 	jp __LABEL__enterpass
-__LABEL115:
+__LABEL100:
 	ld hl, __LABEL1
 	call __LOADSTR
 	push hl
 	call _print40
 	ld de, __LABEL1
-	ld hl, __LABEL117
+	ld hl, __LABEL102
 	call __ADDSTR
 	push hl
 	call _print40
@@ -1878,15 +1802,15 @@ __LABEL115:
 	pop af
 	call __LTI8
 	or a
-	jp z, __LABEL119
+	jp z, __LABEL104
 	ld de, __LABEL1
-	ld hl, __LABEL120
+	ld hl, __LABEL105
 	call __ADDSTR
 	push hl
 	call _print40
 	xor a
 	jp _ConectarWiFi__leave
-__LABEL119:
+__LABEL104:
 	push ix
 	pop hl
 	ld de, -5
@@ -1900,15 +1824,15 @@ __LABEL119:
 	pop af
 	call __LTI8
 	or a
-	jp z, __LABEL122
+	jp z, __LABEL107
 	ld de, __LABEL1
-	ld hl, __LABEL123
+	ld hl, __LABEL108
 	call __ADDSTR
 	push hl
 	call _print40
 	xor a
 	jp _ConectarWiFi__leave
-__LABEL122:
+__LABEL107:
 	ld a, 1
 	push af
 	ld a, 2
@@ -1919,16 +1843,16 @@ __LABEL122:
 	pop af
 	call __LTI8
 	or a
-	jp z, __LABEL125
+	jp z, __LABEL110
 	ld de, __LABEL1
-	ld hl, __LABEL126
+	ld hl, __LABEL111
 	call __ADDSTR
 	push hl
 	call _print40
 	xor a
 	jp _ConectarWiFi__leave
-__LABEL125:
-__LABEL127:
+__LABEL110:
+__LABEL112:
 	push ix
 	pop hl
 	ld de, -1
@@ -1942,38 +1866,38 @@ __LABEL127:
 	pop af
 	call __LTI8
 	or a
-	jp z, __LABEL130
+	jp z, __LABEL115
 	ld (ix-1), 255
-	jp __LABEL128
-__LABEL130:
+	jp __LABEL113
+__LABEL115:
 	ld a, (ix-1)
 	push af
 	ld a, 1
 	pop hl
 	cp h
-	jp c, __LABEL128
-__LABEL132:
-	jp __LABEL127
-__LABEL128:
+	jp c, __LABEL113
+__LABEL117:
+	jp __LABEL112
+__LABEL113:
 	ld a, (ix-1)
 	sub 2
-	jp nz, __LABEL133
+	jp nz, __LABEL118
 	ld de, __LABEL1
-	ld hl, __LABEL135
+	ld hl, __LABEL120
 	call __ADDSTR
 	push hl
 	call _print40
 	ld a, 1
 	jp _ConectarWiFi__leave
-__LABEL133:
+__LABEL118:
 	ld de, __LABEL1
-	ld hl, __LABEL136
+	ld hl, __LABEL121
 	call __ADDSTR
 	push hl
 	call _print40
 	xor a
 	jp _ConectarWiFi__leave
-__LABEL134:
+__LABEL119:
 _ConectarWiFi__leave:
 	ex af, af'
 	exx
@@ -2000,17 +1924,17 @@ __LABEL__retrywifi:
 	push hl
 	call _print40
 	ld de, __LABEL1
-	ld hl, __LABEL137
+	ld hl, __LABEL122
 	call __ADDSTR
 	push hl
 	call _print40
 	ld de, __LABEL1
-	ld hl, __LABEL138
+	ld hl, __LABEL123
 	call __ADDSTR
 	push hl
 	call _print40
 	ld de, __LABEL1
-	ld hl, __LABEL139
+	ld hl, __LABEL124
 	call __ADDSTR
 	push hl
 	call _print40
@@ -2024,27 +1948,27 @@ __LABEL__retrywifi:
 	ld l, (ix-2)
 	ld h, (ix-1)
 	push hl
-	ld de, __LABEL140
+	ld de, __LABEL125
 	pop hl
 	xor a
 	call __STREQ
 	or a
-	jp z, __LABEL142
+	jp z, __LABEL127
 	ld a, 1
 	jp _ReintentarWiFi__leave
-__LABEL142:
+__LABEL127:
 	ld l, (ix-2)
 	ld h, (ix-1)
 	push hl
-	ld de, __LABEL143
+	ld de, __LABEL128
 	pop hl
 	xor a
 	call __STREQ
 	or a
-	jp z, __LABEL145
+	jp z, __LABEL130
 	xor a
 	jp _ReintentarWiFi__leave
-__LABEL145:
+__LABEL130:
 	call CLS
 	xor a
 	push af
@@ -2052,7 +1976,7 @@ __LABEL145:
 	push af
 	call _printat40
 	ld de, __LABEL1
-	ld hl, __LABEL146
+	ld hl, __LABEL131
 	call __ADDSTR
 	push hl
 	call _print40
@@ -2086,7 +2010,7 @@ _ConectarTCP:
 	push hl
 	call _print40
 	ld de, __LABEL1
-	ld hl, __LABEL147
+	ld hl, __LABEL132
 	call __ADDSTR
 	push hl
 	call _print40
@@ -2096,7 +2020,7 @@ _ConectarTCP:
 	call _print40
 __LABEL__enteraddress:
 	ld de, __LABEL1
-	ld hl, __LABEL148
+	ld hl, __LABEL133
 	call __ADDSTR
 	push hl
 	call _print40
@@ -2119,9 +2043,9 @@ __LABEL__enteraddress:
 	pop hl
 	or a
 	sbc hl, de
-	jp nz, __LABEL150
+	jp nz, __LABEL135
 	ld de, __LABEL1
-	ld hl, __LABEL151
+	ld hl, __LABEL136
 	call __ADDSTR
 	push hl
 	call _print40
@@ -2130,10 +2054,10 @@ __LABEL__enteraddress:
 	push hl
 	call _print40
 	jp __LABEL__enteraddress
-__LABEL150:
+__LABEL135:
 __LABEL__enterport:
 	ld de, __LABEL1
-	ld hl, __LABEL152
+	ld hl, __LABEL137
 	call __ADDSTR
 	push hl
 	call _print40
@@ -2156,9 +2080,9 @@ __LABEL__enterport:
 	pop hl
 	or a
 	sbc hl, de
-	jp nz, __LABEL154
+	jp nz, __LABEL139
 	ld de, __LABEL1
-	ld hl, __LABEL155
+	ld hl, __LABEL140
 	call __ADDSTR
 	push hl
 	call _print40
@@ -2167,7 +2091,7 @@ __LABEL__enterport:
 	push hl
 	call _print40
 	jp __LABEL__enterport
-__LABEL154:
+__LABEL139:
 	ld l, (ix-5)
 	ld h, (ix-4)
 	xor a
@@ -2182,9 +2106,9 @@ __LABEL154:
 	pop hl
 	or a
 	sbc hl, de
-	jp nz, __LABEL157
+	jp nz, __LABEL142
 	ld de, __LABEL1
-	ld hl, __LABEL155
+	ld hl, __LABEL140
 	call __ADDSTR
 	push hl
 	call _print40
@@ -2193,13 +2117,13 @@ __LABEL154:
 	push hl
 	call _print40
 	jp __LABEL__enterport
-__LABEL157:
+__LABEL142:
 	ld hl, __LABEL1
 	call __LOADSTR
 	push hl
 	call _print40
 	ld de, __LABEL1
-	ld hl, __LABEL117
+	ld hl, __LABEL102
 	call __ADDSTR
 	push hl
 	call _print40
@@ -2220,15 +2144,15 @@ __LABEL157:
 	pop af
 	call __LTI8
 	or a
-	jp z, __LABEL159
+	jp z, __LABEL144
 	ld de, __LABEL1
-	ld hl, __LABEL160
+	ld hl, __LABEL145
 	call __ADDSTR
 	push hl
 	call _print40
 	xor a
 	jp _ConectarTCP__leave
-__LABEL159:
+__LABEL144:
 	ld l, (ix-7)
 	ld h, (ix-6)
 	ld de, 0
@@ -2242,15 +2166,15 @@ __LABEL159:
 	pop af
 	call __LTI8
 	or a
-	jp z, __LABEL162
+	jp z, __LABEL147
 	ld de, __LABEL1
-	ld hl, __LABEL163
+	ld hl, __LABEL148
 	call __ADDSTR
 	push hl
 	call _print40
 	xor a
 	jp _ConectarTCP__leave
-__LABEL162:
+__LABEL147:
 	ld a, 1
 	push af
 	ld a, 5
@@ -2261,16 +2185,16 @@ __LABEL162:
 	pop af
 	call __LTI8
 	or a
-	jp z, __LABEL165
+	jp z, __LABEL150
 	ld de, __LABEL1
-	ld hl, __LABEL126
+	ld hl, __LABEL111
 	call __ADDSTR
 	push hl
 	call _print40
 	xor a
 	jp _ConectarTCP__leave
-__LABEL165:
-__LABEL166:
+__LABEL150:
+__LABEL151:
 	push ix
 	pop hl
 	ld de, -1
@@ -2284,19 +2208,19 @@ __LABEL166:
 	pop af
 	call __LTI8
 	or a
-	jp z, __LABEL169
+	jp z, __LABEL154
 	ld (ix-1), 255
-	jp __LABEL167
-__LABEL169:
+	jp __LABEL152
+__LABEL154:
 	ld a, (ix-1)
 	push af
 	ld a, 1
 	pop hl
 	cp h
-	jp c, __LABEL167
-__LABEL171:
-	jp __LABEL166
-__LABEL167:
+	jp c, __LABEL152
+__LABEL156:
+	jp __LABEL151
+__LABEL152:
 	push ix
 	pop hl
 	ld de, -1
@@ -2307,23 +2231,23 @@ __LABEL167:
 	call _ReadByte
 	ld a, (ix-1)
 	sub 2
-	jp nz, __LABEL172
+	jp nz, __LABEL157
 	ld de, __LABEL1
-	ld hl, __LABEL135
+	ld hl, __LABEL120
 	call __ADDSTR
 	push hl
 	call _print40
 	ld a, 1
 	jp _ConectarTCP__leave
-__LABEL172:
+__LABEL157:
 	ld de, __LABEL1
-	ld hl, __LABEL136
+	ld hl, __LABEL121
 	call __ADDSTR
 	push hl
 	call _print40
 	xor a
 	jp _ConectarTCP__leave
-__LABEL173:
+__LABEL158:
 _ConectarTCP__leave:
 	ex af, af'
 	exx
@@ -2350,17 +2274,17 @@ __LABEL__retrytcp:
 	push hl
 	call _print40
 	ld de, __LABEL1
-	ld hl, __LABEL137
+	ld hl, __LABEL122
 	call __ADDSTR
 	push hl
 	call _print40
 	ld de, __LABEL1
-	ld hl, __LABEL138
+	ld hl, __LABEL123
 	call __ADDSTR
 	push hl
 	call _print40
 	ld de, __LABEL1
-	ld hl, __LABEL139
+	ld hl, __LABEL124
 	call __ADDSTR
 	push hl
 	call _print40
@@ -2374,27 +2298,27 @@ __LABEL__retrytcp:
 	ld l, (ix-2)
 	ld h, (ix-1)
 	push hl
-	ld de, __LABEL140
+	ld de, __LABEL125
 	pop hl
 	xor a
 	call __STREQ
 	or a
-	jp z, __LABEL175
+	jp z, __LABEL160
 	ld a, 1
 	jp _ReintentarTCP__leave
-__LABEL175:
+__LABEL160:
 	ld l, (ix-2)
 	ld h, (ix-1)
 	push hl
-	ld de, __LABEL143
+	ld de, __LABEL128
 	pop hl
 	xor a
 	call __STREQ
 	or a
-	jp z, __LABEL177
+	jp z, __LABEL162
 	xor a
 	jp _ReintentarTCP__leave
-__LABEL177:
+__LABEL162:
 	call CLS
 	xor a
 	push af
@@ -2402,7 +2326,7 @@ __LABEL177:
 	push af
 	call _printat40
 	ld de, __LABEL1
-	ld hl, __LABEL146
+	ld hl, __LABEL131
 	call __ADDSTR
 	push hl
 	call _print40
@@ -2582,10 +2506,10 @@ __LABEL36:
 __LABEL39:
 	DEFW 0001h
 	DEFB 08h
-__LABEL104:
+__LABEL89:
 	DEFW 0001h
 	DEFB 5Fh
-__LABEL108:
+__LABEL93:
 	DEFW 0011h
 	DEFB 2Dh
 	DEFB 43h
@@ -2604,7 +2528,7 @@ __LABEL108:
 	DEFB 69h
 	DEFB 46h
 	DEFB 69h
-__LABEL109:
+__LABEL94:
 	DEFW 001Bh
 	DEFB 20h
 	DEFB 20h
@@ -2633,7 +2557,7 @@ __LABEL109:
 	DEFB 74h
 	DEFB 65h
 	DEFB 72h
-__LABEL112:
+__LABEL97:
 	DEFW 000Fh
 	DEFB 53h
 	DEFB 53h
@@ -2650,7 +2574,7 @@ __LABEL112:
 	DEFB 63h
 	DEFB 74h
 	DEFB 6Fh
-__LABEL113:
+__LABEL98:
 	DEFW 0014h
 	DEFB 20h
 	DEFB 20h
@@ -2672,7 +2596,7 @@ __LABEL113:
 	DEFB 6Fh
 	DEFB 72h
 	DEFB 64h
-__LABEL116:
+__LABEL101:
 	DEFW 0013h
 	DEFB 50h
 	DEFB 61h
@@ -2693,7 +2617,7 @@ __LABEL116:
 	DEFB 63h
 	DEFB 74h
 	DEFB 6Fh
-__LABEL117:
+__LABEL102:
 	DEFW 000Dh
 	DEFB 43h
 	DEFB 6Fh
@@ -2708,7 +2632,7 @@ __LABEL117:
 	DEFB 2Eh
 	DEFB 2Eh
 	DEFB 2Eh
-__LABEL120:
+__LABEL105:
 	DEFW 001Ch
 	DEFB 45h
 	DEFB 72h
@@ -2738,7 +2662,7 @@ __LABEL120:
 	DEFB 53h
 	DEFB 49h
 	DEFB 44h
-__LABEL123:
+__LABEL108:
 	DEFW 001Ch
 	DEFB 45h
 	DEFB 72h
@@ -2768,7 +2692,7 @@ __LABEL123:
 	DEFB 61h
 	DEFB 73h
 	DEFB 73h
-__LABEL126:
+__LABEL111:
 	DEFW 0018h
 	DEFB 45h
 	DEFB 72h
@@ -2794,7 +2718,7 @@ __LABEL126:
 	DEFB 69h
 	DEFB 6Fh
 	DEFB 6Eh
-__LABEL135:
+__LABEL120:
 	DEFW 0009h
 	DEFB 43h
 	DEFB 6Fh
@@ -2805,7 +2729,7 @@ __LABEL135:
 	DEFB 61h
 	DEFB 64h
 	DEFB 6Fh
-__LABEL136:
+__LABEL121:
 	DEFW 0011h
 	DEFB 45h
 	DEFB 72h
@@ -2824,7 +2748,7 @@ __LABEL136:
 	DEFB 74h
 	DEFB 61h
 	DEFB 72h
-__LABEL137:
+__LABEL122:
 	DEFW 0012h
 	DEFB 51h
 	DEFB 75h
@@ -2844,7 +2768,7 @@ __LABEL137:
 	DEFB 65h
 	DEFB 72h
 	DEFB 3Fh
-__LABEL138:
+__LABEL123:
 	DEFW 0019h
 	DEFB 20h
 	DEFB 20h
@@ -2871,7 +2795,7 @@ __LABEL138:
 	DEFB 69h
 	DEFB 6Fh
 	DEFB 6Eh
-__LABEL139:
+__LABEL124:
 	DEFW 000Bh
 	DEFB 20h
 	DEFB 20h
@@ -2884,13 +2808,13 @@ __LABEL139:
 	DEFB 6Ch
 	DEFB 69h
 	DEFB 72h
-__LABEL140:
+__LABEL125:
 	DEFW 0001h
 	DEFB 72h
-__LABEL143:
+__LABEL128:
 	DEFW 0001h
 	DEFB 73h
-__LABEL146:
+__LABEL131:
 	DEFW 0011h
 	DEFB 4Fh
 	DEFB 70h
@@ -2909,7 +2833,7 @@ __LABEL146:
 	DEFB 63h
 	DEFB 74h
 	DEFB 61h
-__LABEL147:
+__LABEL132:
 	DEFW 0015h
 	DEFB 2Dh
 	DEFB 43h
@@ -2932,7 +2856,7 @@ __LABEL147:
 	DEFB 64h
 	DEFB 6Fh
 	DEFB 72h
-__LABEL148:
+__LABEL133:
 	DEFW 0015h
 	DEFB 20h
 	DEFB 20h
@@ -2955,7 +2879,7 @@ __LABEL148:
 	DEFB 69h
 	DEFB 6Fh
 	DEFB 6Eh
-__LABEL151:
+__LABEL136:
 	DEFW 0013h
 	DEFB 53h
 	DEFB 65h
@@ -2976,7 +2900,7 @@ __LABEL151:
 	DEFB 63h
 	DEFB 74h
 	DEFB 6Fh
-__LABEL152:
+__LABEL137:
 	DEFW 0012h
 	DEFB 20h
 	DEFB 20h
@@ -2996,7 +2920,7 @@ __LABEL152:
 	DEFB 72h
 	DEFB 74h
 	DEFB 6Fh
-__LABEL155:
+__LABEL140:
 	DEFW 0011h
 	DEFB 50h
 	DEFB 75h
@@ -3015,7 +2939,7 @@ __LABEL155:
 	DEFB 63h
 	DEFB 74h
 	DEFB 6Fh
-__LABEL160:
+__LABEL145:
 	DEFW 0018h
 	DEFB 45h
 	DEFB 72h
@@ -3041,7 +2965,7 @@ __LABEL160:
 	DEFB 69h
 	DEFB 6Fh
 	DEFB 6Eh
-__LABEL163:
+__LABEL148:
 	DEFW 0015h
 	DEFB 45h
 	DEFB 72h
@@ -3417,7 +3341,7 @@ __MEM_SUBTRACT:
 
 	        ENDP
 
-#line 3052 "ZXTelnet.zxbas"
+#line 2976 "ZXTelnet.zxbas"
 #line 1 "asc.asm"
 
 	; Returns the ascii code for the given str
@@ -3646,7 +3570,7 @@ __ASC_END:
 
 		ret
 		ENDP
-#line 3053 "ZXTelnet.zxbas"
+#line 2977 "ZXTelnet.zxbas"
 #line 1 "band32.asm"
 
 	; FASTCALL bitwise and 32 version.
@@ -3685,7 +3609,7 @@ __BAND32:
 
 	    ret
 
-#line 3054 "ZXTelnet.zxbas"
+#line 2978 "ZXTelnet.zxbas"
 #line 1 "bor32.asm"
 
 	; FASTCALL bitwise or 32 version.
@@ -3724,7 +3648,7 @@ __BOR32:
 
 	    ret
 
-#line 3055 "ZXTelnet.zxbas"
+#line 2979 "ZXTelnet.zxbas"
 #line 1 "border.asm"
 
 	; __FASTCALL__ Routine to change de border
@@ -3734,7 +3658,7 @@ __BOR32:
 
 	; Nothing to do! (Directly from the ZX Spectrum ROM)
 
-#line 3056 "ZXTelnet.zxbas"
+#line 2980 "ZXTelnet.zxbas"
 #line 1 "bright.asm"
 
 	; Sets bright flag in ATTR_P permanently
@@ -3791,7 +3715,7 @@ BRIGHT_TMP:
 		ld hl, ATTR_T
 		jr __SET_BRIGHT
 	    ENDP
-#line 3057 "ZXTelnet.zxbas"
+#line 2981 "ZXTelnet.zxbas"
 #line 1 "chr.asm"
 
 	; CHR$(x, y, x) returns the string CHR$(x) + CHR$(y) + CHR$(z)
@@ -3869,7 +3793,7 @@ __CHR_END:
 
 			ENDP
 
-#line 3058 "ZXTelnet.zxbas"
+#line 2982 "ZXTelnet.zxbas"
 #line 1 "cls.asm"
 
 	; JUMPS directly to spectrum CLS
@@ -3952,7 +3876,7 @@ __CLS_SCR:
 								    ; to get the start of the screen
 		ENDP
 
-#line 3059 "ZXTelnet.zxbas"
+#line 2983 "ZXTelnet.zxbas"
 #line 1 "copy_attr.asm"
 
 #line 4 "C:/ZXBasic/library-asm/copy_attr.asm"
@@ -3996,7 +3920,7 @@ __REFRESH_TMP:
 
 		ENDP
 
-#line 3060 "ZXTelnet.zxbas"
+#line 2984 "ZXTelnet.zxbas"
 #line 1 "eq16.asm"
 
 __EQ16:	; Test if 16bit values HL == DE
@@ -4007,7 +3931,7 @@ __EQ16:	; Test if 16bit values HL == DE
 			inc a
 			ret
 
-#line 3061 "ZXTelnet.zxbas"
+#line 2985 "ZXTelnet.zxbas"
 
 
 #line 1 "ftou32reg.asm"
@@ -4137,7 +4061,7 @@ __FTOU8:	; Converts float in C ED LH to Unsigned byte in A
 		ld a, l
 		ret
 
-#line 3064 "ZXTelnet.zxbas"
+#line 2988 "ZXTelnet.zxbas"
 #line 1 "iload32.asm"
 
 	; __FASTCALL__ routine which
@@ -4157,7 +4081,7 @@ __ILOAD32:
 		ex de, hl
 		ret
 
-#line 3065 "ZXTelnet.zxbas"
+#line 2989 "ZXTelnet.zxbas"
 #line 1 "ink.asm"
 
 	; Sets ink color in ATTR_P permanently
@@ -4203,7 +4127,7 @@ INK_TMP:
 
 		ENDP
 
-#line 3066 "ZXTelnet.zxbas"
+#line 2990 "ZXTelnet.zxbas"
 #line 1 "inkey.asm"
 
 	; INKEY Function
@@ -4266,7 +4190,7 @@ __EMPTY_INKEY:
 
 		ENDP
 
-#line 3067 "ZXTelnet.zxbas"
+#line 2991 "ZXTelnet.zxbas"
 #line 1 "loadstr.asm"
 
 
@@ -4312,7 +4236,7 @@ __LOADSTR:		; __FASTCALL__ entry
 			ldir	; Copies string (length number included)
 			pop hl	; Recovers destiny in hl as result
 			ret
-#line 3068 "ZXTelnet.zxbas"
+#line 2992 "ZXTelnet.zxbas"
 #line 1 "lti8.asm"
 
 #line 1 "lei8.asm"
@@ -4339,7 +4263,7 @@ checkParity:
 	    ret
 	    ENDP
 #line 2 "lti8.asm"
-#line 3069 "ZXTelnet.zxbas"
+#line 2993 "ZXTelnet.zxbas"
 #line 1 "over.asm"
 
 	; Sets OVER flag in P_FLAG permanently
@@ -4387,7 +4311,7 @@ OVER_TMP:
 
 		ENDP
 
-#line 3070 "ZXTelnet.zxbas"
+#line 2994 "ZXTelnet.zxbas"
 #line 1 "paper.asm"
 
 	; Sets paper color in ATTR_P permanently
@@ -4436,7 +4360,7 @@ PAPER_TMP:
 		jp __SET_PAPER
 		ENDP
 
-#line 3071 "ZXTelnet.zxbas"
+#line 2995 "ZXTelnet.zxbas"
 #line 1 "pause.asm"
 
 	; The PAUSE statement (Calling the ROM)
@@ -4445,7 +4369,7 @@ __PAUSE:
 		ld b, h
 	    ld c, l
 	    jp 1F3Dh  ; PAUSE_1
-#line 3072 "ZXTelnet.zxbas"
+#line 2996 "ZXTelnet.zxbas"
 #line 1 "pistore32.asm"
 
 #line 1 "store32.asm"
@@ -4476,7 +4400,7 @@ __STORE32:	; Stores the given integer in DEBC at address HL
 #line 2 "pistore32.asm"
 
 	; The content of this file has been moved to "store32.asm"
-#line 3073 "ZXTelnet.zxbas"
+#line 2997 "ZXTelnet.zxbas"
 #line 1 "pstore32.asm"
 
 
@@ -4489,7 +4413,7 @@ __PSTORE32:
 			add hl, bc
 			pop bc
 			jp __STORE32
-#line 3074 "ZXTelnet.zxbas"
+#line 2998 "ZXTelnet.zxbas"
 #line 1 "pstorestr.asm"
 
 ; vim:ts=4:et:sw=4
@@ -4810,7 +4734,7 @@ __PSTORE_STR:
 	    add hl, bc
 	    jp __STORE_STR
 
-#line 3075 "ZXTelnet.zxbas"
+#line 2999 "ZXTelnet.zxbas"
 #line 1 "pstorestr2.asm"
 
 ; vim:ts=4:et:sw=4
@@ -4869,7 +4793,7 @@ __PSTORE_STR2:
 	    add hl, bc
 	    jp __STORE_STR2
 
-#line 3076 "ZXTelnet.zxbas"
+#line 3000 "ZXTelnet.zxbas"
 #line 1 "shl32.asm"
 
 
@@ -4881,7 +4805,7 @@ __SHL32: ; Left Logical Shift 32 bits
 		rl d
 	    ret
 
-#line 3077 "ZXTelnet.zxbas"
+#line 3001 "ZXTelnet.zxbas"
 #line 1 "shrl32.asm"
 
 
@@ -4893,7 +4817,7 @@ __SHRL32: ; Right Logical Shift 32 bits
 	    rr l
 	    ret
 
-#line 3078 "ZXTelnet.zxbas"
+#line 3002 "ZXTelnet.zxbas"
 
 
 
@@ -5023,7 +4947,7 @@ __STR_END:
 
 		ENDP
 
-#line 3082 "ZXTelnet.zxbas"
+#line 3006 "ZXTelnet.zxbas"
 #line 1 "strcat.asm"
 
 
@@ -5170,7 +5094,7 @@ __STRCATEND:
 
 			ENDP
 
-#line 3083 "ZXTelnet.zxbas"
+#line 3007 "ZXTelnet.zxbas"
 #line 1 "string.asm"
 
 	; String library
@@ -5399,7 +5323,7 @@ __FREE_END:
 
 			ENDP
 
-#line 3084 "ZXTelnet.zxbas"
+#line 3008 "ZXTelnet.zxbas"
 
 #line 1 "strslice.asm"
 
@@ -5509,7 +5433,7 @@ __FREE_ON_EXIT:
 
 		ENDP
 
-#line 3086 "ZXTelnet.zxbas"
+#line 3010 "ZXTelnet.zxbas"
 #line 1 "u32tofreg.asm"
 
 
@@ -5601,7 +5525,7 @@ __U32TOFREG_END:
 		ret
 	    ENDP
 
-#line 3087 "ZXTelnet.zxbas"
+#line 3011 "ZXTelnet.zxbas"
 #line 1 "val.asm"
 
 
@@ -5723,7 +5647,7 @@ __RET_ZERO:	; Returns 0 Floating point on error
 
 		ENDP
 
-#line 3088 "ZXTelnet.zxbas"
+#line 3012 "ZXTelnet.zxbas"
 
 ZXBASIC_USER_DATA:
 	_input40_LastK EQU 23560
