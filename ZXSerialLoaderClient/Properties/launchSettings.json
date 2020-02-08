@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "ZXSerialLoaderClient": {
+      "commandName": "Project",
+      "commandLineArgs": "COM3 ZXTelnet.hex"
+    }
+  }
+}
