@@ -1,0 +1,145 @@
+﻿; Code file
+start: .org #0000
+
+regI:               ;.SNA header with all required data
+.db #00
+regHLP:
+.dw #0000
+regDEP:
+.dw #0000
+regBCP:
+.dw #0000
+regAFP: 
+.dw #0000
+regHL:
+.dw #0000
+regDE:
+.dw #0000
+regBC:
+.dw #0000
+regIY:
+.dw #0000
+regIX:
+.dw #0000
+IFFStatus:
+.db #00
+regR:
+.db #00
+regAF:
+.dw #0000
+regSP:
+.dw #0000
+intMode:
+.db #00
+borderColor:
+.db #00
+
+
+status:                     ;used to signal statuses between firmware and program
+.db #00
+startAddress:               ;stores the program execute address
+.dw #0000
+segmentDest:                ;stores segment destination address
+.dw #0000
+segmentSize:                ;stores segment size
+.dw #0000
+
+
+NMIHandler:
+.org #0066
+
+DI                          ;disable interrupts
+POP HL                      ;remove from the stack the old return address
+
+copyLoop:
+
+LD HL, segmentSource        ;copy transfer info
+LD DE, (segmentDest)
+LD BC, (segmentSize)
+
+LDIR                        ;transfer segment
+
+LD A, 1                     ;signal copy
+LD (status), A
+
+waitLoop:
+LD A, (status)              ;copy status
+XOR A, #AA                  ;check for final
+JP Z, executeProgram        
+
+LD A, (status)              ;copy status again
+XOR A, #55                  ;check for next segment
+
+JP NZ, waitLoop             ;wait again...
+
+LD A, 0                     ;reset status
+LD (status), A
+
+JP copyLoop                 ;jump to next segment transfer
+
+executeProgram:
+
+LD SP, (regSP)              ;restore SP
+
+LD A, (borderColor)
+OUT (0xFE), A               ;restore original border color
+
+LD HL, (regHLP)             ;load secondary registers
+LD DE, (regDEP)
+LD BC, (regBCP)
+
+EXX                         ;exchange them
+
+LD BC, (regAF)              ;store AF' and AF in the stack for later use
+PUSH BC
+LD BC, (regAFP)
+PUSH BC
+
+LD HL, (regHL)              ;load registers
+LD DE, (regDE)
+LD BC, (regBC)
+
+LD IY, (regIY)
+LD IX, (regIX)
+
+testMode2:                  ;test interrupt mode
+LD A, (intMode)             ;test mode 2
+XOR 2
+JP NZ, testMode1
+IM 2
+JP interruptStatus
+
+testMode1:
+LD A, (intMode)             ;test mode 1
+XOR 1
+JP NZ, mode0
+IM 1
+JP interruptStatus
+
+mode0:
+IM 0                        ;mode 0 then...
+
+interruptStatus:
+LD A, (IFFStatus)           ;check interrupt status
+OR 0
+JP Z, finalRestore
+EI
+
+finalRestore:
+
+LD A, (regI)
+LD I, A
+
+POP AF                      ;restore AF'
+EX AF, AF'
+
+LD A, (regR)                ;restore R
+LD R, A
+
+POP AF                      ;restore A
+
+
+
+RETN                        ;exit NIM
+
+segmentSource:

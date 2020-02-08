@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Ports;
+using System.Runtime.InteropServices;
 
 namespace ZXSerialLoaderClient
 {
@@ -9,19 +10,35 @@ namespace ZXSerialLoaderClient
     {
         static void Main(string[] args)
         {
-            if(args.Length != 2)
+            if (args.Length != 2)
             {
-                Console.WriteLine("Usage: ZXSerialLoaderClient <COM PORT> <HEX FILE>");
+                Console.WriteLine("Usage: ZXSerialLoaderClient <COM PORT> <FILE>");
                 return;
             }
+
+            string ext = Path.GetExtension(args[1]).ToLower();
+
+            if (ext == ".hex")
+                LoadHex(args[0], args[1]);
+            else if (ext == ".sna")
+                LoadSna(args[0], args[1]);
+            else
+            {
+                Console.WriteLine("Unknown format, supported SNA and HEX");
+                return;
+            }
+
+        }
+        static void LoadHex(string COMPORT, string FileName)
+        {
 
             SerialPort sp;
             try
             {
-                sp = new SerialPort(args[0], 115200, Parity.None, 8, StopBits.One);
+                sp = new SerialPort(COMPORT, 115200, Parity.None, 8, StopBits.One);
                 sp.Open();
             }
-            catch 
+            catch
             {
                 Console.WriteLine("Error opening serial port");
                 return;
@@ -31,9 +48,9 @@ namespace ZXSerialLoaderClient
 
             try
             {
-                sr = File.OpenText(args[1]);
+                sr = File.OpenText(FileName);
             }
-            catch 
+            catch
             {
                 sp.Close();
                 Console.WriteLine("Error opening HEX file");
@@ -76,8 +93,21 @@ namespace ZXSerialLoaderClient
             Console.WriteLine($"File parsed, start address: {startAddress}, end address: {endAddress - 1}");
             Console.WriteLine("Press return to send");
             Console.ReadKey();
+
+            Console.WriteLine("Handshaking...");
+
+            sp.Write("H");
+
+            string response = sp.ReadLine();
+
+            if (response != "RDY")
+            {
+                Console.WriteLine("System not ready!");
+                return;
+            }
+
             Console.WriteLine("Sending...");
-            
+
             int x = Console.CursorLeft;
             int y = Console.CursorTop;
 
@@ -105,13 +135,13 @@ namespace ZXSerialLoaderClient
 
                 sp.Write(tmpBuffer, 0, 1);  //Send last segment
 
-                tmpBuffer[0] =  (byte)(pos & 0xFF);
-                tmpBuffer[1] =  (byte)((pos >> 8) & 0xFF);
+                tmpBuffer[0] = (byte)(pos & 0xFF);
+                tmpBuffer[1] = (byte)((pos >> 8) & 0xFF);
                 sp.Write(tmpBuffer, 0, 2); //Send segment address
 
 
-                tmpBuffer[0] =  (byte)(segLen & 0xFF);
-                tmpBuffer[1] =  (byte)((segLen >> 8) & 0xFF); 
+                tmpBuffer[0] = (byte)(segLen & 0xFF);
+                tmpBuffer[1] = (byte)((segLen >> 8) & 0xFF);
                 sp.Write(tmpBuffer, 0, 2); //Send segment size
 
                 while (sp.ReadLine() != "OK") ; //Wait for aknowledge
@@ -121,11 +151,11 @@ namespace ZXSerialLoaderClient
 
 
                 //Wait for acknowledge
-                if(!finished)
+                if (!finished)
                     while (sp.ReadLine() != "NEXT") ;
 
                 currentPct += pct;
-                
+
                 if (currentPct > 100)
                     currentPct = 100;
 
@@ -147,5 +177,159 @@ namespace ZXSerialLoaderClient
             sr.Close();
             sr.Dispose();
         }
+
+        static void LoadSna(string COMPORT, string FileName)
+        {
+
+            SerialPort sp;
+            try
+            {
+                sp = new SerialPort(COMPORT, 1000000, Parity.None, 8, StopBits.One);
+                sp.Open();
+            }
+            catch
+            {
+                Console.WriteLine("Error opening serial port");
+                return;
+            }
+
+            SNAFile sr;
+
+            try
+            {
+                var sna = GetSna(FileName);
+
+                if (sna == null)
+                {
+                    Console.WriteLine("Incompatible file format!");
+                    return;
+                }
+
+                sr = sna;
+            }
+            catch
+            {
+                sp.Close();
+                Console.WriteLine("Error opening SNA file");
+                return;
+            }
+
+            int startAddress = 16 * 1024;
+            int endAddress = 64 * 1024;
+
+            Console.WriteLine($"Snapshot loaded");
+            Console.WriteLine("Press return to send");
+            Console.ReadKey();
+
+            Console.WriteLine("Handshaking...");
+
+            sp.Write("S");
+
+            string response = sp.ReadLine();
+
+            if (response != "RDY")
+            {
+                Console.WriteLine("System not ready!");
+                return;
+            }
+
+            Console.WriteLine("Sending...");
+
+            int x = Console.CursorLeft;
+            int y = Console.CursorTop;
+
+            const int packetLength = 2048;
+
+            Console.WriteLine("0%");
+
+            int totalLength = endAddress - startAddress;
+            double pct = (packetLength * 100.0) / totalLength;
+            double currentPct = 0;
+
+            int pos = startAddress;
+
+            bool finished = false;
+
+            sp.Write(sr.Header, 0, 27);
+
+            while (pos < endAddress)
+            {
+                int segLen = Math.Min(packetLength, endAddress - pos);
+
+                byte[] tmpBuffer = new byte[2];
+
+                if (pos + segLen >= endAddress) //Is last segment?
+                {
+                    finished = true;
+                    tmpBuffer[0] = 1;
+                }
+
+                sp.Write(tmpBuffer, 0, 1);  //Send last segment
+
+                tmpBuffer[0] = (byte)(pos & 0xFF);
+                tmpBuffer[1] = (byte)((pos >> 8) & 0xFF);
+                sp.Write(tmpBuffer, 0, 2); //Send segment address
+
+
+                tmpBuffer[0] = (byte)(segLen & 0xFF);
+                tmpBuffer[1] = (byte)((segLen >> 8) & 0xFF);
+                sp.Write(tmpBuffer, 0, 2); //Send segment size
+
+
+                while (sp.ReadLine() != "OK") ; //Wait for aknowledge
+
+                //Send segment
+                sp.Write(sr.RAM, pos - 16384, segLen);
+
+
+                byte[] cpBuffer = new byte[packetLength];
+
+
+                //Wait for acknowledge
+                if (!finished)
+                    while (sp.ReadLine() != "NEXT") ;
+
+                currentPct += pct;
+
+                if (currentPct > 100)
+                    currentPct = 100;
+
+                Console.CursorLeft = x;
+                Console.CursorTop = y;
+
+                Console.WriteLine($"{(int)currentPct}%");
+
+                pos += segLen;
+            }
+
+            sp.ReadLine();
+            Console.WriteLine("Waiting execution...");
+            sp.ReadLine();
+            Console.WriteLine("Transferred successfully");
+
+            sp.Close();
+            sp.Dispose();
+        }
+
+        static SNAFile GetSna(string FileName)
+        {
+            byte[] bytes = File.ReadAllBytes(FileName);
+
+            if (bytes.Length != (48 * 1024) + 27)
+                return null;
+
+            SNAFile file = new SNAFile();
+
+            Buffer.BlockCopy(bytes, 0, file.Header, 0, 27);
+            Buffer.BlockCopy(bytes, 27, file.RAM, 0, 48 * 1024);
+
+            return file;
+        }
+    }
+
+    class SNAFile
+    {
+        public byte[] Header = new byte[27];
+        public byte[] RAM = new byte[48 * 1024];
     }
 }

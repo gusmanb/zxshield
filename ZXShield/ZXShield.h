@@ -157,6 +157,8 @@ inline void ZXShield::OutputROMByte(byte Value)
 	asm("nop");
 	asm("nop");
 	asm("nop");
+	//asm("nop");
+	//asm("nop");
 	DATA_DIR = DIR_IN;
 }
 
