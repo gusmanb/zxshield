@@ -61,8 +61,7 @@ void loop() {
 		memset((void*)virtualRAM, 0, 4096);
 		memcpy_P((void*)virtualRAM, HEXProgram, HEX_SEGMENT_ADDRESS);
 
-		//Notify we're ready
-		WriteString("RDY");
+		//Load the program
 		loadHEX();
 	}
 	else if (op == 'S')	//SNA loader
@@ -80,8 +79,7 @@ void loop() {
 		memset((void*)virtualRAM, 0, 4096);
 		memcpy_P((void*)virtualRAM, SNAProgram, SNA_SEGMENT_ADDRESS);
 
-		//Notify we're ready
-		WriteString("RDY");
+		//Load the program
 		loadSNA();
 	}
 }
@@ -91,6 +89,7 @@ void loadSNA()
 	bool finished = false;
 	vramDisabled = false;
 
+	//Notify we're ready
 	WriteString("RDY");
 	//Read the SNA header
 	ReadSegment(header, SNA_HEADER_SIZE);
