@@ -122,6 +122,7 @@
   <ItemGroup>
     <ClInclude Include="HEXLoader.h" />
     <ClInclude Include="SNALoader.h" />
+    <ClInclude Include="Z80Loader.h" />
     <ClInclude Include="__vm\.ZXSerialLoaderFirmware.vsarduino.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

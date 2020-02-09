@@ -18,7 +18,13 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="1942.z80">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="AGENT.SNA">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Arkanoid.z80">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="BOMBJACK.SNA">

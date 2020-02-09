@@ -6,6 +6,7 @@
 
 #include "arduino.h"
 #include "ZXShield.h"
+#include "Z80Loader.h"
 #include "SNALoader.h"
 #include "HEXLoader.h"
 #include <avr/io.h> 
@@ -82,6 +83,108 @@ void loop() {
 		//Load the program
 		loadSNA();
 	}
+	else if (op == 'Z')	//SNA loader
+	{
+		//Create pointers to special virtual RAM addresses
+		header = &virtualRAM[Z80_HEADER_ADDRESS];
+		status = &virtualRAM[Z80_STATUS_ADDRESS];
+		startAddress = (volatile word* volatile)&virtualRAM[Z80_START_ADDRESS_ADDRESS];
+		segmentDest = (volatile word* volatile)&virtualRAM[Z80_SEGMENT_DEST_ADDRESS];
+		segmentSize = (volatile word* volatile)&virtualRAM[Z80_SEGMENT_SIZE_ADDRESS];
+		virtualSegment = &virtualRAM[Z80_SEGMENT_ADDRESS];
+		exitAddress = Z80_EXIT_ADDRESS;
+
+		//Copy program loader
+		memset((void*)virtualRAM, 0, 4096);
+		memcpy_P((void*)virtualRAM, Z80Program, Z80_SEGMENT_ADDRESS);
+
+		//Load the program
+		loadZ80();
+	}
+	else
+		WriteString("UNKNOWN");
+}
+
+void loadZ80()
+{
+	bool finished = false;
+	vramDisabled = false;
+
+	//Notify we're ready
+	WriteString("RDY");
+	//Read the Z80 header
+	ReadSegment(header, Z80_HEADER_SIZE);
+
+	//read first segment data
+	byte isLast = ReadByte();
+	//The first segment address is also the program start address
+	*startAddress = *segmentDest = ReadInt();
+	*segmentSize = ReadInt();
+	//Acknowledge the data
+	WriteString("OK");
+	//Receive the segment
+	ReadSegment(virtualSegment, *segmentSize);
+
+	//
+	if (isLast)
+	{
+		*status = 0xAA;		//Total transfer is less or equal to a segment
+							//As the program will read always one segment and
+							//then check the status we can set the finish flag
+							//in the first transfer
+		finished = true;
+	}
+	else
+		*status = 0x00;		//clear status
+
+	vramDisabled = false;
+	//Start the transfer by enabling the vRAM and raising a NMI on the speccy
+	ZXShield::EnableROMWithNMI();
+
+	//transfer loop
+	while (!finished)
+	{
+		//Wait for the segment transfer
+		while (*status != 1);
+
+		//Now the program is on the wait loop, request the next segment
+		WriteString("NEXT");
+
+		//Read segment data
+		isLast = ReadByte();
+		*startAddress = *segmentDest = ReadInt();
+		*segmentSize = ReadInt();
+
+		//Acknowledge the data
+		WriteString("OK");
+
+		//Receive the segment
+		ReadSegment(virtualSegment, *segmentSize);
+
+		if (isLast)	//Was this the last segment?
+		{
+			finished = true;
+
+			*status = 0x55;			//Signal the program that it has to copy a segment
+			while (*status != 0);	//Wait until the program has read the flag to avoid race conditions
+			while (*status != 1);	//Wait until the program returns to the wait loop
+			*status = 0xAA;			//Signal the program that we have finished
+		}
+		else
+		{
+			*status = 0x55;
+			while (*status != 0);	//Wait until the program has read the flag to avoid race conditions
+		}
+	}
+
+	//Inform the client we're waiting the program to write the last segment
+	WriteString("WAIT_LAST");
+
+	//Wait until the program has read the last instruction
+	while (!vramDisabled);
+
+	//Notify to the client the succes transfer
+	WriteString("TRANSFER_SUCCESS");
 }
 
 void loadSNA()

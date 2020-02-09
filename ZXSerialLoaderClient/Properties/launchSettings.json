@@ -2,7 +2,7 @@
   "profiles": {
     "ZXSerialLoaderClient": {
       "commandName": "Project",
-      "commandLineArgs": "COM3 NOMAD.SNA"
+      "commandLineArgs": "COM3 Arkanoid.z80"
     }
   }
 }

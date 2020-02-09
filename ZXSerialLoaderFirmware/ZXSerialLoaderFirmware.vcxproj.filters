@@ -30,5 +30,8 @@
     <ClInclude Include="SNALoader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Z80Loader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
