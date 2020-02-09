@@ -2,7 +2,7 @@
   "profiles": {
     "ZXSerialLoaderClient": {
       "commandName": "Project",
-      "commandLineArgs": "COM3 Arkanoid.z80"
+      "commandLineArgs": "COM3 MAPSNATCH.z80"
     }
   }
 }

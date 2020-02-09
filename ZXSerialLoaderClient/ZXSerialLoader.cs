@@ -229,7 +229,7 @@ namespace ZXSerialLoaderClient
                         head->PC = head2->PC;
                     }
 
-                    compressed = (head->Info1 & 16) != 0;
+                    compressed = (head->Info1 & 32) != 0;
 
                     fixed (byte* cData = file.Header)
                     {
@@ -256,6 +256,7 @@ namespace ZXSerialLoaderClient
 
                 if (headerLength != 30)
                 {
+                    compressed = true;
 
                     int i = headerLength;
 
