@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ZXSerialLoaderClient
+namespace ZXDesktopLoader
 {
     public class ZXSerialLoader
     {
@@ -18,7 +18,7 @@ namespace ZXSerialLoaderClient
             SerialPortError = -3,
             UnknownResponse = -4
         }
-        public async Task<ZXSerialLoaderResult> LoadFile(string SerialPort, string FileName, int BlockSize, Action<int> Progress)
+        public ZXSerialLoaderResult LoadFile(string SerialPort, string FileName, int BlockSize, Action<int> Progress)
         {
             string ext = Path.GetExtension(FileName).ToLower();
 
@@ -27,11 +27,11 @@ namespace ZXSerialLoaderClient
             switch (ext)
             {
                 case ".hex":
-                    program = await HEXFile.Load(FileName);
+                    program = HEXFile.Load(FileName);
                     break;
 
                 case ".sna":
-                    program = await SNAFile.Load(FileName);
+                    program = SNAFile.Load(FileName);
                     break;
 
                 case ".z80":
@@ -49,78 +49,87 @@ namespace ZXSerialLoaderClient
             {
                 string dvResponse;
 
-                using SerialPort serial = new SerialPort(SerialPort, 1000000, Parity.None, 8, StopBits.One);
-                serial.Open();
-
-                serial.ReadTimeout = 5000;
-                serial.WriteTimeout = 5000;
-
-                serial.Write(program.Operation);
-
-                if ((dvResponse = serial.ReadLine()) != "RDY")
-                    return ZXSerialLoaderResult.UnknownResponse;
-
-                if (program.Header != null)
-                    serial.Write(program.Header, 0, program.Header.Length);
-
-                int pos = program.StartAddress;
-                bool finished = false;
-
-                double passPercent = BlockSize * 100 / (program.EndAddress - program.StartAddress);
-                double currentPercent = 0;
-
-                while (pos < program.EndAddress)
+                using (SerialPort serial = new SerialPort(SerialPort, 1000000, Parity.None, 8, StopBits.One))
                 {
-                    int segLen = Math.Min(BlockSize, program.EndAddress - pos);
+                    serial.Open();
 
-                    byte[] tmpBuffer = new byte[2];
+                    serial.ReadTimeout = 5000;
+                    serial.WriteTimeout = 5000;
 
-                    if (pos + segLen >= program.EndAddress) //Is last segment?
-                    {
-                        finished = true;
-                        tmpBuffer[0] = 1;
-                    }
+                    serial.Write(program.Operation);
 
-                    serial.Write(tmpBuffer, 0, 1);  //Send last segment
-
-                    tmpBuffer[0] = (byte)(pos & 0xFF);
-                    tmpBuffer[1] = (byte)((pos >> 8) & 0xFF);
-                    serial.Write(tmpBuffer, 0, 2); //Send segment address
-
-
-                    tmpBuffer[0] = (byte)(segLen & 0xFF);
-                    tmpBuffer[1] = (byte)((segLen >> 8) & 0xFF);
-                    serial.Write(tmpBuffer, 0, 2); //Send segment size
-
-
-                    if ((dvResponse = serial.ReadLine()) != "OK")
+                    if ((dvResponse = serial.ReadLine()) != "RDY")
                         return ZXSerialLoaderResult.UnknownResponse;
 
-                    //Send segment
-                    serial.Write(program.Data, pos, segLen);
+                    if (program.Header != null)
+                        serial.Write(program.Header, 0, program.Header.Length);
 
-                    //Wait for acknowledge
-                    if (!finished)
+                    int pos = program.StartAddress;
+                    bool finished = false;
+
+                    double passPercent = BlockSize * 100 / (program.EndAddress - program.StartAddress);
+                    double currentPercent = 0;
+
+                    while (pos < program.EndAddress)
                     {
-                        if ((dvResponse = serial.ReadLine()) != "NEXT")
+                        int segLen = Math.Min(BlockSize, program.EndAddress - pos);
+
+                        byte[] tmpBuffer = new byte[2];
+
+                        if (pos + segLen >= program.EndAddress) //Is last segment?
+                        {
+                            finished = true;
+                            tmpBuffer[0] = 1;
+                        }
+
+                        serial.Write(tmpBuffer, 0, 1);  //Send last segment
+
+                        tmpBuffer[0] = (byte)(pos & 0xFF);
+                        tmpBuffer[1] = (byte)((pos >> 8) & 0xFF);
+                        serial.Write(tmpBuffer, 0, 2); //Send segment address
+
+
+                        tmpBuffer[0] = (byte)(segLen & 0xFF);
+                        tmpBuffer[1] = (byte)((segLen >> 8) & 0xFF);
+                        serial.Write(tmpBuffer, 0, 2); //Send segment size
+
+
+                        if ((dvResponse = serial.ReadLine()) != "OK")
                             return ZXSerialLoaderResult.UnknownResponse;
+
+                        //Send segment
+                        serial.Write(program.Data, pos, segLen);
+
+                        //Wait for acknowledge
+                        if (!finished)
+                        {
+                            if ((dvResponse = serial.ReadLine()) != "NEXT")
+                                return ZXSerialLoaderResult.UnknownResponse;
+                        }
+
+                        currentPercent += passPercent;
+
+                        if(Progress != null)
+                            Progress((int)Math.Min(100, currentPercent));
+
+                        pos += segLen;
                     }
 
-                    currentPercent += passPercent;
+                    if (Progress != null)
+                        Progress(1000);
+                    
+                    serial.ReadLine();
+                    if (Progress != null)
+                        Progress(2000);
+                    
+                    serial.ReadLine();
+                    if (Progress != null)
+                        Progress(3000);
 
-                    Progress((int)Math.Min(100, currentPercent));
+                    serial.Close();
 
-                    pos += segLen;
+                    return ZXSerialLoaderResult.Success;
                 }
-
-                Progress(1000);
-                serial.ReadLine();
-                Progress(2000);
-                serial.ReadLine();
-                Progress(3000);
-                serial.Close();
-
-                return ZXSerialLoaderResult.Success;
             }
             catch 
             {
@@ -143,13 +152,13 @@ namespace ZXSerialLoaderClient
             public override byte[] Header { get; set; } = new byte[27];
             public override byte[] Data { get; set; } = new byte[64 * 1024];
             public override string Operation => "S";
-            public static async Task<SNAFile> Load(string FileName)
+            public static SNAFile Load(string FileName)
             {
                 byte[] bytes;
 
                 try
                 {
-                    bytes = await File.ReadAllBytesAsync(FileName);
+                    bytes = File.ReadAllBytes(FileName);
                 }
                 catch { return null; }
 
@@ -171,7 +180,7 @@ namespace ZXSerialLoaderClient
             public override byte[] Header { get; set; } = null;
             public override byte[] Data { get; set; } = new byte[64 * 1024];
             public override string Operation => "H";
-            public static async Task<HEXFile> Load(string FileName)
+            public static HEXFile Load(string FileName)
             {
                 HEXFile file = new HEXFile();
 
@@ -179,7 +188,7 @@ namespace ZXSerialLoaderClient
 
                 try
                 {
-                    lines = await File.ReadAllLinesAsync(FileName);
+                    lines = File.ReadAllLines(FileName);
                 }
                 catch { return null; }
 
