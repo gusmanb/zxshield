@@ -2,8 +2,10 @@
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Ports;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace ZXDesktopLoader
@@ -14,7 +16,7 @@ namespace ZXDesktopLoader
         {
             Success = 0,
             Unsupported = -1,
-            FileLoadError = -2,
+            FileError = -2,
             SerialPortError = -3,
             UnknownResponse = -4
         }
@@ -37,19 +39,18 @@ namespace ZXDesktopLoader
                 case ".z80":
                     program = Z80File.Load(FileName);
                     break;
-
                 default:
                     return ZXSerialLoaderResult.Unsupported;
             }
 
             if (program == null)
-                return ZXSerialLoaderResult.FileLoadError;
+                return ZXSerialLoaderResult.FileError;
 
             try
             {
                 string dvResponse;
 
-                using (SerialPort serial = new SerialPort(SerialPort, 1000000, Parity.None, 8, StopBits.One))
+                using (SerialPort serial = new SerialPort(SerialPort, 115200, Parity.None, 8, StopBits.One))
                 {
                     serial.Open();
 
@@ -137,6 +138,133 @@ namespace ZXDesktopLoader
             }
         }
 
+        public ZXSerialLoaderResult DumpFile(string SerialPort, string FileName, int BlockSize, Action<int> Progress)
+        {
+            try
+            {
+                byte[] RAMBuffer = new byte[49152];
+                byte[] SNAHeader = new byte[27];
+
+                try
+                {
+                    string dvResponse;
+
+                    using (SerialPort serial = new SerialPort(SerialPort, 115200, Parity.None, 8, StopBits.One))
+                    {
+                        serial.Open();
+
+                        //serial.ReadTimeout = 5000;
+                        //serial.WriteTimeout = 5000;
+
+                        serial.Write("D");
+
+                        if ((dvResponse = serial.ReadLine()) != "RDY")
+                            return ZXSerialLoaderResult.UnknownResponse;
+
+                        int pos = 16384;
+                        int endAddress = 65536;
+
+                        bool finished = false;
+
+                        double passPercent = BlockSize * 100 / (endAddress - pos);
+                        double currentPercent = 0;
+                        int segLen = 0;
+
+                        while (pos < endAddress)
+                        {
+                            segLen = Math.Min(BlockSize, endAddress - pos);
+
+                            byte[] tmpBuffer = new byte[2];
+
+                            if (pos + segLen >= endAddress) //Is last segment?
+                            {
+                                finished = true;
+                                tmpBuffer[0] = 1;
+                            }
+
+                            serial.Write(tmpBuffer, 0, 1);  //Send last segment
+
+                            tmpBuffer[0] = (byte)(pos & 0xFF);
+                            tmpBuffer[1] = (byte)((pos >> 8) & 0xFF);
+                            serial.Write(tmpBuffer, 0, 2); //Send segment address
+
+
+                            tmpBuffer[0] = (byte)(segLen & 0xFF);
+                            tmpBuffer[1] = (byte)((segLen >> 8) & 0xFF);
+                            serial.Write(tmpBuffer, 0, 2); //Send segment size
+
+
+                            if ((dvResponse = serial.ReadLine()) != "OK")
+                                return ZXSerialLoaderResult.UnknownResponse;
+                            
+
+                            while (serial.BytesToRead < segLen)
+                            {
+                                ; ;
+                            }
+
+                            serial.Read(RAMBuffer, pos - 16384, segLen);
+
+                            //Wait for acknowledge
+                            if (!finished)
+                            {
+                                if ((dvResponse = serial.ReadLine()) != "NEXT")
+                                    return ZXSerialLoaderResult.UnknownResponse;
+                            }
+
+                            currentPercent += passPercent;
+
+                            if (Progress != null)
+                                Progress((int)Math.Min(100, currentPercent));
+
+                            pos += segLen;
+                        }
+
+                        //pos -= segLen;
+
+                        if (Progress != null)
+                            Progress(1000);
+
+                        //while (serial.BytesToRead < segLen) ;
+
+                        //serial.Read(RAMBuffer, pos, segLen);
+
+                        if ((dvResponse = serial.ReadLine()) != "HEADER")
+                            return ZXSerialLoaderResult.UnknownResponse;
+
+                        while (serial.BytesToRead < 27) ;
+                        serial.Read(SNAHeader, 0, 27);
+
+                        if (Progress != null)
+                            Progress(2000);
+
+                        serial.ReadLine();
+
+                        if (Progress != null)
+                            Progress(3000);
+
+                        serial.Close();
+
+                    }
+                }
+                catch
+                {
+                    return ZXSerialLoaderResult.SerialPortError;
+                }
+
+                List<byte> finalBuffer = new List<byte>();
+                finalBuffer.AddRange(SNAHeader);
+                finalBuffer.AddRange(RAMBuffer);
+
+                File.WriteAllBytes(FileName, finalBuffer.ToArray());
+
+
+                return ZXSerialLoaderResult.Success;
+
+            }
+            catch { return ZXSerialLoaderResult.FileError; }
+        }
+
         public abstract class SpectrumFile
         {
             public abstract int StartAddress { get; set; }
@@ -222,7 +350,6 @@ namespace ZXDesktopLoader
 
             }
         }
-
         class Z80File : SpectrumFile
         {
             public override int StartAddress { get; set; } = 16384;
@@ -452,6 +579,283 @@ namespace ZXDesktopLoader
                 [FieldOffset(27)]
                 public ushort PC;
             }
-        }
+          }
+
+    //    class TAPFile : SpectrumFile
+    //    {
+    //        public override int StartAddress { get; set; } = int.MaxValue;
+    //        public override int EndAddress { get; set; } = int.MinValue;
+    //        public override byte[] Header { get; set; } = null;
+    //        public override byte[] Data { get; set; } = new byte[64 * 1024];
+    //        public override string Operation => "T";
+    //        public static TAPFile Load(string FileName)
+    //        {
+    //            TAPFile file = new TAPFile();
+
+    //            byte[] data = File.ReadAllBytes(FileName);
+
+    //            List<TAPBlock> blocks = new List<TAPBlock>();
+
+    //            int pos = 0;
+
+    //            while (pos < data.Length)
+    //            {
+    //                TAPBlock block = TAPBlock.LoadBlock(data, pos, out pos);
+
+    //                if (block == null)
+    //                    return null;
+
+    //                blocks.Add(block);
+    //            }
+
+    //            byte[] basicLoader = null;
+
+    //            while (blocks.Count > 0)
+    //            {
+    //                if (blocks.Count < 2)
+    //                    return null;
+
+    //                TAPBlock headerBlock = blocks[0];
+    //                blocks.RemoveAt(0);
+    //                TAPBlock dataBlock = blocks[0];
+    //                blocks.RemoveAt(0);
+
+    //                if (!headerBlock.IsHeader || dataBlock.IsHeader || 
+    //                    !headerBlock.IsValid || !dataBlock.IsValid)
+    //                    return null;
+
+    //                TAPHeader realHeader = headerBlock.GetHeader();
+    //                byte[] realData = dataBlock.GetData();
+
+    //                if (realHeader.Type == TAPSpectrumDataType.Program)
+    //                {
+    //                    if (basicLoader != null)
+    //                        return null;
+
+    //                    basicLoader = realData;
+    //                }
+    //                else if (realHeader.Type == TAPSpectrumDataType.Code)
+    //                {
+    //                    if (realHeader.Length != realData.Length)
+    //                        return null;
+
+    //                    Buffer.BlockCopy(realData, 0, file.Data, realHeader.Param1, realData.Length);
+
+    //                    if (realHeader.Param1 < file.StartAddress)
+    //                        file.StartAddress = realHeader.Param1;
+
+    //                    if (realHeader.Param1 + realData.Length > file.EndAddress)
+    //                        file.EndAddress = realHeader.Param1 + realData.Length;
+    //                }
+    //                else
+    //                    return null;
+    //            }
+
+    //            if (basicLoader == null)
+    //                return null;
+
+    //            file.Header = FindEntryPoint(basicLoader);
+
+    //            if (file.Header == null)
+    //                return null;
+
+    //            return file;
+
+    //        }
+
+    //        private static byte[] FindEntryPoint(byte[] BasicLoader)
+    //        {
+    //            byte[] address = null;
+
+    //            string program = ParseBasicProgram(BasicLoader);
+
+    //            Regex regUsr = new Regex("RANDOMIZE USR ([0-9]+)");
+    //            var match = regUsr.Match(program);
+
+    //            if (match != null)
+    //                address = BitConverter.GetBytes((ushort)32768);
+
+    //            return address;
+    //        }
+
+    //        static string[] extendedChars = new string[] {" ", "▝", "▘", "▀", "▗", "▐", "▚", "▜", "▖", "▞", "▌", "▛", "▄", "▟",
+    //"▙", "█", "Ⓐ", "Ⓑ", "Ⓒ", "Ⓓ", "Ⓔ", "Ⓕ", "Ⓖ", "Ⓗ", "Ⓘ", "Ⓙ", "Ⓚ",
+    //"Ⓛ", "Ⓜ", "Ⓝ", "Ⓞ", "Ⓟ", "Ⓠ", "Ⓡ", "Ⓢ", "Ⓣ", "Ⓤ", "RND", "INKEY$",
+    //"PI", "FN ", "POINT ", "SCREEN$ ", "ATTR ", "AT ", "TAB ", "VAL$ ",
+    //"CODE ", "VAL ", "LEN ", "SIN ", "COS ", "TAN ", "ASN ", "ACS ", "ATN ",
+    //"LN ", "EXP ", "INT ", "SQR ", "SGN ", "ABS ", "PEEK ", "IN ", "USR ",
+    //"STR$ ", "CHR$ ", "NOT ", "BIN ", " OR ", " AND ", "<=", ">=", "<>",
+    //" LINE ", " THEN ", " TO ", " STEP ", " DEF FN ", " CAT ", " FORMAT ",
+    //" MOVE ", " ERASE ", " OPEN #", " CLOSE #", " MERGE ", " VERIFY ",
+    //" BEEP ", " CIRCLE ", " INK ", " PAPER ", " FLASH ", " BRIGHT ",
+    //" INVERSE ", " OVER ", " OUT ", " LPRINT ", " LLIST ", " STOP ", " READ ",
+    //" DATA ", " RESTORE ", " NEW ", " BORDER ", " CONTINUE ", " DIM ", " REM ",
+    //" FOR ", " GO TO ", " GO SUB ", " INPUT ", " LOAD ", " LIST ", " LET ",
+    //" PAUSE ", " NEXT ", " POKE ", " PRINT ", " PLOT ", " RUN ", " SAVE ",
+    //" RANDOMIZE ", " IF ", " CLS ", " DRAW ", " CLEAR ", " RETURN ", " COPY " };
+
+    //        static string ParseBasicProgram(byte[] Program)
+    //        {
+    //            StringBuilder sb = new StringBuilder();
+
+    //            int pos = 0;
+
+    //            while (pos + 4 < Program.Length)
+    //            {
+    //                int lineNumber = BigEndianWord(Program, pos);
+    //                pos += 2;
+    //                int lineLength = Word(Program, pos);
+    //                pos += 2;
+
+    //                if (lineLength + pos > Program.Length)
+    //                    break;
+
+    //                sb.Append($"{lineNumber} {DecodeBasicLine(Program, pos, lineLength)}");
+
+    //                pos += lineLength;
+    //            }
+
+    //            return sb.ToString();
+    //         }
+
+    //        private static StringBuilder DecodeBasicLine(byte[] Program, int Start, int Length)
+    //        {
+    //            StringBuilder sb = new StringBuilder();
+    //            int pos = 0;
+
+    //            while (pos < Length)
+    //            {
+    //                byte ch = Program[pos + Start];
+    //                pos++;
+
+    //                if (0x10 <= ch && ch <= 0x15)
+    //                    pos++;
+    //                else if (0x16 <= ch && ch <= 0x17)
+    //                    pos += 2;
+    //                else if (ch == 0x0E)
+    //                    pos += 5;
+    //                else
+    //                    sb.Append(ConvertChar(ch, sb.Length > 0 && sb[sb.Length - 1] == ' '));
+    //            }
+
+    //            return sb;
+    //        }
+
+    //        private static string ConvertChar(byte Chr, bool NoLeadingSpace)
+    //        {
+    //            if (Chr == 0x0D)
+    //                return "\n";
+    //            else if (Chr >= 0x80)
+    //            {
+    //                string res = extendedChars[Chr - 0x80];
+
+    //                if (NoLeadingSpace && Chr >= 0xA5 && res[0] == ' ')
+    //                    return res.Substring(1);
+
+    //                return res;
+    //            }
+    //            else if (Chr == 0x5E)
+    //                return "↑";
+    //            else if (Chr == 0x60) 
+    //                return "£";
+    //            else if (Chr == 0x7F) 
+    //                return "©";
+    //            else
+    //                return new string((char)Chr, 1);
+    //        }
+
+    //        private static ushort Word(byte[] data, int offset)
+    //        {
+    //            return (ushort)(data[offset] | (data[offset + 1] << 8));
+    //        }
+    //        private static ushort BigEndianWord(byte[] data, int offset)
+    //        {
+    //            return (ushort)(data[offset + 1] | (data[offset] << 8));
+    //        }
+    //        class TAPHeader
+    //        {
+    //            public TAPSpectrumDataType Type;
+    //            public byte[] Name;
+    //            public ushort Length;
+    //            public ushort Param1;
+    //            public ushort Param2;
+    //            public byte Flag;
+    //            public byte Checksum;
+    //        }
+
+    //        class TAPBlock
+    //        {
+    //            public ushort Length;
+    //            public byte[] Data;
+
+    //            public bool IsValid 
+    //            { 
+    //                get 
+    //                {
+    //                    byte current = Data[0];
+
+    //                    for (int buc = 1; buc < Data.Length; buc++)
+    //                        current ^= Data[buc];
+
+    //                    return current == 0;
+    //                } 
+    //            }
+
+    //            public bool IsHeader { get { return Length == 19 && Data[0] == 0x00; } }
+
+    //            public TAPHeader GetHeader()
+    //            {
+    //                if (!IsHeader || !IsValid)
+    //                    return null;
+
+    //                TAPHeader header = new TAPHeader();
+    //                header.Type = (TAPSpectrumDataType)Data[1];
+    //                header.Name = new byte[10];
+    //                Buffer.BlockCopy(Data, 2, header.Name, 0, 10);
+    //                header.Length = Word(Data, 12);
+    //                header.Param1 = Word(Data, 14);
+    //                header.Param2 = Word(Data, 16);
+    //                header.Checksum = Data[18];
+    //                return header;
+    //            }
+
+    //            public byte[] GetData()
+    //            {
+    //                if (IsHeader || !IsValid)
+    //                    return null;
+
+    //                byte[] data = new byte[Data.Length - 2];
+    //                Buffer.BlockCopy(Data, 1, data, 0, data.Length);
+    //                return data;
+    //            }
+
+    //            public static TAPBlock LoadBlock(byte[] FileData, int StartPos, out int EndPos)
+    //            {
+    //                EndPos = 0;
+                    
+    //                TAPBlock block = new TAPBlock();
+                    
+    //                block.Length = Word(FileData, StartPos);
+
+    //                if (block.Length + StartPos + 2 > FileData.Length)
+    //                    return null;
+
+    //                block.Data = new byte[block.Length];
+    //                Buffer.BlockCopy(FileData, StartPos + 2, block.Data, 0, block.Data.Length);
+
+    //                EndPos = StartPos + 2 + block.Length;
+
+    //                return block;
+    //            }
+    //        }
+
+    //        enum TAPSpectrumDataType : byte
+    //        {
+    //            Program = 0,
+    //            Number = 1,
+    //            Character = 2,
+    //            Code = 3
+    //        }
+    //    }
     }
 }

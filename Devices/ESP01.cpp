@@ -76,6 +76,21 @@ bool ESP01::ConnectWiFi(const char* SSID, const char* Password)
 	if (!GetCommandResponse())
 		return false;
 
+
+
+
+	if (!SendCommand("AT+CIFSR"))
+		return false;
+
+	if (!GetCommandResponse())
+		return false;
+
+	if (!ParseIP())
+		return false;
+
+
+
+
 	if (!SendCommand(F("AT+CIPMUX=0")))
 		return false;
 
@@ -88,6 +103,24 @@ bool ESP01::ConnectWiFi(const char* SSID, const char* Password)
 	if (!GetCommandResponse())
 		return false;
 
+	return true;
+}
+
+bool ESP01::ParseIP()
+{
+	int line = FindLine("+CIFSR:STAIP,", 13);
+
+	if (line < 0)
+		return false;
+
+	memset(IPAddress, 0, IP_BUFFER_LEN);
+
+	line += 14;
+	int pos = 0;
+
+	while (CommandData[line] != '"')
+		IPAddress[pos++] = CommandData[line++];
+	
 	return true;
 }
 
@@ -118,14 +151,8 @@ bool ESP01::ConnectToServer(const char * Address, const char * Port)
 		return false;
 
 	if (!GetCommandResponse())
-	{
-		//Serial.println("Error Part 6");
-		//Serial.println(CommandData);
 		return false;
-	}
-
-	//Serial.println("connected");
-
+	
 	return true;
 }
 

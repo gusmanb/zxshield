@@ -253,9 +253,13 @@ void ZXPeripheral::ActivateRegister(byte RegNumber)
 void ZXPeripheral::SendRegisterInfo()
 {
 	if (CurrentRegister == NULL)
+	{
 		ZXShield::OutputPeripheralByte(0xFF);
+	}
 	else
+	{
 		ZXShield::OutputPeripheralByte(CurrentRegister->Config);
+	}
 }
 
 void ZXPeripheral::SetRegisterLength(byte Data)

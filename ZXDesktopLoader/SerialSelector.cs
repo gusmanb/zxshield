@@ -30,6 +30,21 @@ namespace ZXDesktopLoader
                 return;
             }
 
+            using (SerialPort sp = new SerialPort(serialDD.SelectedItem.ToString()))
+            {
+                try
+                {
+                    sp.Open();
+                }
+                catch 
+                {
+                    MessageBox.Show("Error opening serial port, possibly in use");
+                    return;
+                }
+            }
+
+                
+
             SelectedPort = serialDD.SelectedItem.ToString();
             this.DialogResult = DialogResult.OK;
             this.Close();

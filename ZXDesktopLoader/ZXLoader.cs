@@ -13,7 +13,7 @@ namespace ZXDesktopLoader
 {
     public partial class ZXLoader : Form
     {
-        string[] allowedExtensions = new string[] { ".hex", ".sna", ".z80" };
+        string[] allowedExtensions = new string[] { ".hex", ".sna", ".z80", ".tap" };
         string serial;
         bool transferring = false;
         public ZXLoader()
@@ -96,6 +96,36 @@ namespace ZXDesktopLoader
 
                 serial = sersel.SelectedPort;
             }
+        }
+
+        private async void dumpBtn_Click(object sender, EventArgs e)
+        {
+            string file;
+
+            using (SaveFileDialog dlg = new SaveFileDialog())
+            {
+                dlg.Filter = "Snapshot file|*.SNA";
+
+                if (dlg.ShowDialog() != DialogResult.OK)
+                    return;
+
+                file = dlg.FileName;
+            }
+
+            ZXSerialLoader loader = new ZXSerialLoader();
+
+            programLbl.Text = Path.GetFileNameWithoutExtension(file);
+            programLbl.Visible = true;
+            cassetteGif.Play();
+
+            var result = await Task.Run(() => loader.DumpFile(serial, file, 1024, null));
+
+            cassetteGif.Stop();
+            programLbl.Visible = false;
+
+            if (result != ZXSerialLoader.ZXSerialLoaderResult.Success)
+                MessageBox.Show("Error dumping program");
+            
         }
     }
 }

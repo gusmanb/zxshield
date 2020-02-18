@@ -1,5 +1,5 @@
 {
-  "DefaultTapeFile": "TapeFiles\\Welcome.tzx",
+  "DefaultTapeFile": "TapeFiles\\Manic Miner (1983)(Bug-Byte).tap",
   "DefaultAnnotationFile": "Annotations.disann",
-  "DefaultCodeFile": "Z80CodeFiles\\ROMRAM.z80asm"
+  "DefaultCodeFile": null
 }

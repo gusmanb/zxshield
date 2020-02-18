@@ -120,6 +120,7 @@
     </None>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Dumper.h" />
     <ClInclude Include="HEXLoader.h" />
     <ClInclude Include="SNALoader.h" />
     <ClInclude Include="Z80Loader.h" />

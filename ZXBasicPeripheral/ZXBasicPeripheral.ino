@@ -9,7 +9,9 @@
 
 // the setup function runs once when you press reset or power the board
 void setup() {
+
 	ZXShield::Initialize();
+
 	ZXShield::Peripheral.CreateRegister(0, BYTE_R, true, true);
 	ZXShield::Peripheral.CreateRegister(1, INT_R, true, true);
 	ZXShield::Peripheral.CreateRegister(2, STREAM_R, true, true);

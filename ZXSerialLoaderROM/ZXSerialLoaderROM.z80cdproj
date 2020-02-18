@@ -10,12 +10,20 @@
     <SpConf Include="Rom\ZxSpectrum.spconf" />
     <Rom Include="Rom\ZxSpectrum48.rom" />
     <DisassAnn Include="Rom\ZxSpectrum48.disann" />
+    <Z80Asm Include="Z80CodeFiles\Dumper.z80asm" />
     <Z80Asm Include="Z80CodeFiles\HEXLoader.z80asm" />
     <Z80Asm Include="Z80CodeFiles\SNALoader.z80asm" />
+    <Z80Asm Include="Z80CodeFiles\Test.z80asm" />
     <Z80Asm Include="Z80CodeFiles\Z80Loader.z80asm" />
     <ZxBasic Include="ZxBasicFiles\Program.zxbas" />
     <Z80Test Include="Z80UnitTests\UnitTest.z80test" />
     <Tzx Include="TapeFiles\Welcome.tzx" />
+  </ItemGroup>
+  <ItemGroup>
+    <Tap Include="TapeFiles\Manic Miner (1983)(Bug-Byte).tap" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjConf Include="Spectrum.projconf" />
   </ItemGroup>
   <Import Project="$(CustomProjectExtensionsPath)Spect.Net.CodeDiscover.targets" />
 </Project>

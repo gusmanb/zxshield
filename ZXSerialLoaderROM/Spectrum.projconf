@@ -1,0 +1,5 @@
+{
+	"preBuild": "echo PRE $(SourceDir) $(ProjectFile) $(SourcePath)",
+	"postBuild": "echo POST $(SourceDir) $(ProjectFile) $(SourcePath)",
+	"postExport": "C:\\Users\\geniw\\source\\repos\\ZXShield\\GeneraROMRAM\\bin\\Debug\\GeneraROMRAM.exe $(ExportPath) C:\\Users\\geniw\\source\\repos\\ZXShield\\GeneraROMRAM\\bin\\Debug\\Dumper.h DUMP"
+}

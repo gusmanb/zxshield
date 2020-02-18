@@ -6,6 +6,7 @@
 
 #include "arduino.h"
 #include "ZXShield.h"
+#include "Dumper.h"
 #include "Z80Loader.h"
 #include "SNALoader.h"
 #include "HEXLoader.h"
@@ -40,7 +41,17 @@ void setup()
 	ZXShield::ResetCPU();
 
 	//Initialize serial port
-	Serial.begin(1000000);
+	Serial.begin(115200);
+
+	//Clear any trash on the buffer
+	byte tmp;
+
+	for (int buc = 0; buc < 100; buc++)
+	{
+		tmp = UDR0;
+		delay(1);
+	}
+
 }
 
 // the loop function runs over and over again until power down or reset
@@ -83,7 +94,7 @@ void loop() {
 		//Load the program
 		loadSNA();
 	}
-	else if (op == 'Z')	//SNA loader
+	else if (op == 'Z')	//Z80 loader
 	{
 		//Create pointers to special virtual RAM addresses
 		header = &virtualRAM[Z80_HEADER_ADDRESS];
@@ -100,6 +111,23 @@ void loop() {
 
 		//Load the program
 		loadZ80();
+	}
+	else if (op == 'D') //Dump SNA
+	{
+		//Create pointers to special virtual RAM addresses
+		header = &virtualRAM[DUMP_HEADER_ADDRESS];
+		status = &virtualRAM[DUMP_STATUS_ADDRESS];
+		segmentDest = (volatile word* volatile)&virtualRAM[DUMP_SEGMENT_SRC_ADDRESS];
+		segmentSize = (volatile word* volatile)&virtualRAM[DUMP_SEGMENT_SIZE_ADDRESS];
+		virtualSegment = &virtualRAM[DUMP_SEGMENT_ADDRESS];
+		exitAddress = DUMP_EXIT_ADDRESS;
+
+		//Copy dumper program
+		memset((void*)virtualRAM, 0, 4096);
+		memcpy_P((void*)virtualRAM, DUMPProgram, DUMP_SEGMENT_ADDRESS);
+
+		//Load the program
+		dumpSNA();
 	}
 	else
 		WriteString("UNKNOWN");
@@ -348,6 +376,89 @@ void loadHEX()
 	WriteString("TRANSFER_SUCCESS");
 }
 
+void dumpSNA()
+{
+	bool finished = false;
+
+	vramDisabled = false;
+
+	//Notify we're ready
+	WriteString("RDY");
+
+	//read first segment data
+	byte isLast = ReadByte();
+	*segmentDest = ReadInt();
+	//WARNING, use small segment sizes, the Arduino will
+	//lock the Z80 when data is sent to the client and will
+	//prevent memory refresh
+	*segmentSize = ReadInt();
+
+	//Acknowledge the data
+	WriteString("OK");
+	
+	if (isLast)
+	{
+		*status = 0xAA;		//Total transfer is less or equal to a segment
+							//As the program will read always one segment and
+							//then check the status we can set the finish flag
+							//in the first transfer
+		finished = true;
+	}
+	else
+		*status = 0x00;		//clear status
+
+	vramDisabled = false;
+	//Start the transfer by enabling the vRAM and raising a NMI on the speccy
+	ZXShield::EnableROMWithNMI();
+
+	//transfer loop
+	while (!finished)
+	{
+		//Wait for the segment transfer
+		while (*status != 1);
+
+		//Transfer the segment to the client
+		WriteSegment(virtualSegment, *segmentSize);
+
+		//Now the program is on the wait loop, request the next segment info
+		WriteString("NEXT");
+
+		//Read segment data
+		isLast = ReadByte();
+		*segmentDest = ReadInt();
+		*segmentSize = ReadInt();
+
+		//Acknowledge the data
+		WriteString("OK");
+
+		if (isLast)	//Was this the last segment?
+		{
+			finished = true;
+
+			*status = 0x55;			//Signal the program that it has to copy a segment
+			while (*status != 0);	//Wait until the program has read the flag to avoid race conditions
+			while (*status != 1);	//Wait until the program returns to the wait loop
+			*status = 0xAA;			//Signal the program that we have finished
+		}
+		else
+		{
+			*status = 0x55;
+			while (*status != 0);	//Wait until the program has read the flag to avoid race conditions
+		}
+	}
+
+	//Wait until the program has read the last instruction
+	while (!vramDisabled);
+
+	//Transfer the last segment to the client
+	WriteSegment(virtualSegment, *segmentSize);
+	//Notify we're sending the SNA header
+	WriteString("HEADER");
+	//Send the header
+	WriteSegment(header, DUMP_HEADER_SIZE);
+	//Notify to the client the succes transfer
+	WriteString("TRANSFER_SUCCESS");
+}
 
 void RAMHandler(word Address, byte Operation)
 {
@@ -356,8 +467,6 @@ void RAMHandler(word Address, byte Operation)
 		virtualRAM[Address] = ZXShield::InputByte();//Store data
 	else
 	{
-		ZXShield::OutputROMByte(virtualRAM[Address]); //send data
-
 		if (Address == exitAddress) //Did the speccy read the last instruction?
 		{
 			//disable vRAM
@@ -365,6 +474,7 @@ void RAMHandler(word Address, byte Operation)
 			ZXShield::DisableROM();
 		}
 
+		ZXShield::OutputROMByte(virtualRAM[Address]); //send data
 	}
 }
 
@@ -404,7 +514,8 @@ void WriteString(const char* String)
 		}
 
 		UDR0 = String[pos++];
-}
+	}
+
 	while (!serialCheckTxReady())
 	{
 		;;
@@ -417,24 +528,23 @@ void WriteString(const char* String)
 #endif
 
 }
-void WriteSegment(volatile byte* target, word length)
+void WriteSegment(volatile byte* volatile target, word length)
 {
 
 #ifdef NO_INTERRUPTS_ON_COMMS
 	noInterrupts();
 #endif
 
-	while (length-- > 0)
-	{
+	int pos = 0;
 
+	while (pos < length)
+	{
 		while (!serialCheckTxReady())
 		{
 			;;
 		}
 
-		UDR0 = *target;
-		target++;
-
+		UDR0 = target[pos++];
 	}
 
 #ifdef NO_INTERRUPTS_ON_COMMS

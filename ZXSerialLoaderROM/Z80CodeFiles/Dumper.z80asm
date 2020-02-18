@@ -1,0 +1,176 @@
+﻿; Code file
+start: .org #0000
+
+regI:               ;.SNA header with all required data
+.db #00
+regHLP:
+.dw #0000
+regDEP:
+.dw #0000
+regBCP:
+.dw #0000
+regAFP: 
+.dw #0000
+regHL:
+.dw #0000
+regDE:
+.dw #0000
+regBC:
+.dw #0000
+regIY:
+.dw #0000
+regIX:
+.dw #0000
+IFFStatus:
+.db #00
+regR:
+.db #00
+regAF:
+.dw #0000
+regSP:
+.dw #0000
+intMode:
+.db #00
+borderColor:
+.db #00
+
+status:                     ;used to signal statuses between firmware and program
+.db #00
+segmentSrc:                ;stores segment source address
+.dw #0000
+segmentSize:                ;stores segment size
+.dw #0000
+
+.org #0065
+tempStack:                  ;temporal stack stored in the Arduino
+
+NMIHandler:                 ;the NMI handler, main entry point
+.org #0066
+
+
+; We set a temporary stack on the Arduino.
+LD (regSP), SP              ;save old stack address
+LD SP, tempStack            ;Change to the temporal stack
+
+;Push on the temporary stack all the registers
+PUSH AF
+PUSH BC
+PUSH DE
+PUSH HL
+
+;store registers
+LD (regBC), BC
+LD (regDE), DE
+LD (regHL), HL
+LD (regIY), IY
+LD (regIX), IX
+
+PUSH AF
+POP BC
+LD (regAF), BC
+
+
+LD A, I                     ;store I
+LD (regI), A                
+
+LD A, R                     ;store R
+LD (regR), A        
+
+LD A, I                     ;Load I to check the IFF status
+PUSH AF
+POP BC
+
+LD A, C                     ;Store only bit2
+AND 4
+
+LD (IFFStatus), A           ;Store IFF status
+
+EXX                         ;change to shadow registers
+LD (regHLP), HL             ;store shadow registers
+LD (regDEP), DE
+LD (regBCP), BC
+EXX                         ;change to normal registers
+
+EX AF, AF'                  ;change to AF'
+
+PUSH AF                     ;store AF'
+POP BC
+LD (regAFP), BC
+
+EX AF, AF'                  ;change to AF
+
+LD A, I                     ;Check if I != 00 and I != #3F
+CP 0
+JP Z, mode1
+CP #3F
+JP Z, mode1
+LD A, 2                     ;INT mode 2
+LD (intMode), A
+JP getBorder
+
+mode1:                      ;INT mode 1
+LD A, 1
+LD (intMode), A
+
+getBorder:
+IN A, (#FE)                 ;Store border color
+LD (borderColor), A
+
+
+;;All the registers and info is stored, now transfer all the data
+
+copyLoop:
+
+LD A, 6                     ;change border color to signal activity
+OUT (#FE), A
+
+LD HL, (segmentSrc)        ;copy transfer info
+LD DE, segmentTarget
+LD BC, (segmentSize)
+
+LDIR                        ;transfer segment
+
+LD A, 1                     ;signal copy
+LD (status), A
+
+LD A, 1                     ;change border color to signal activity
+OUT (#FE), A
+
+waitLoop:
+LD A, (status)              ;copy status
+XOR A, #AA                  ;check for final
+JP Z, returnProgram        
+
+LD A, (status)              ;copy status again
+XOR A, #55                  ;check for next segment
+
+JP NZ, waitLoop             ;wait again...
+
+LD A, 0                     ;reset status
+LD (status), A
+
+JP copyLoop                 ;jump to next segment transfer
+
+returnProgram:
+
+POP HL                      ;restore registers
+POP DE
+POP BC
+
+LD A, (borderColor)         ;restore border color
+OUT (#FE), A
+
+LD A, (IFFStatus)           ;Restore interrupt status
+
+CP 4
+JP NZ, noInterrupts
+EI
+
+noInterrupts:
+
+POP AF                      ;restore AF
+LD SP, (regSP)              ;restore stack
+
+RETN                        ;exit NIM
+
+segmentTarget:

@@ -1,0 +1,8 @@
+﻿; Code file
+start: .org #8000
+
+LD A, #AA
+PUSH AF
+POP BC
+LD A, C
+

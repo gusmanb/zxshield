@@ -1,2 +1,1 @@
-﻿cls
-print at 4,6; ink 7; paper 1; flash 1;" HELLO, ZX BASIC! "
+﻿clear 30000

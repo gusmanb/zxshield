@@ -30,6 +30,7 @@
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(ZXLoader));
             this.cassetteGif = new ZXDesktopLoader.GIFPlayer();
+            this.dumpBtn = new System.Windows.Forms.Button();
             this.programLbl = new System.Windows.Forms.Label();
             this.cassetteGif.SuspendLayout();
             this.SuspendLayout();
@@ -37,6 +38,7 @@
             // cassetteGif
             // 
             this.cassetteGif.AllowDrop = true;
+            this.cassetteGif.Controls.Add(this.dumpBtn);
             this.cassetteGif.Controls.Add(this.programLbl);
             this.cassetteGif.Dock = System.Windows.Forms.DockStyle.Fill;
             this.cassetteGif.GIF = ((System.Drawing.Image)(resources.GetObject("cassetteGif.GIF")));
@@ -45,14 +47,27 @@
             this.cassetteGif.Size = new System.Drawing.Size(442, 257);
             this.cassetteGif.TabIndex = 0;
             // 
+            // dumpBtn
+            // 
+            this.dumpBtn.BackColor = System.Drawing.Color.Transparent;
+            this.dumpBtn.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.dumpBtn.ForeColor = System.Drawing.Color.DimGray;
+            this.dumpBtn.Image = ((System.Drawing.Image)(resources.GetObject("dumpBtn.Image")));
+            this.dumpBtn.Location = new System.Drawing.Point(371, 202);
+            this.dumpBtn.Name = "dumpBtn";
+            this.dumpBtn.Size = new System.Drawing.Size(39, 37);
+            this.dumpBtn.TabIndex = 1;
+            this.dumpBtn.UseVisualStyleBackColor = false;
+            this.dumpBtn.Click += new System.EventHandler(this.dumpBtn_Click);
+            // 
             // programLbl
             // 
             this.programLbl.BackColor = System.Drawing.Color.Transparent;
             this.programLbl.Font = new System.Drawing.Font("Cabin Sketch", 11.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.programLbl.ForeColor = System.Drawing.Color.DimGray;
-            this.programLbl.Location = new System.Drawing.Point(70, 18);
+            this.programLbl.Location = new System.Drawing.Point(70, 9);
             this.programLbl.Name = "programLbl";
-            this.programLbl.Size = new System.Drawing.Size(246, 23);
+            this.programLbl.Size = new System.Drawing.Size(246, 40);
             this.programLbl.TabIndex = 0;
             this.programLbl.Text = "label1";
             this.programLbl.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
@@ -81,6 +96,7 @@
 
         private GIFPlayer cassetteGif;
         private System.Windows.Forms.Label programLbl;
+        private System.Windows.Forms.Button dumpBtn;
     }
 }
 

@@ -17,6 +17,7 @@
 #define ADDR_H_MASK B00111111
 #define OP_MASK B01000000
 
+#define RST_DIR DDRC
 #define RST_PORT PORTC
 #define RST_HI_MASK B10000000
 #define RST_LO_MASK B01111111
@@ -43,7 +44,7 @@
 
 #define INT_PERI_PIN 2
 #define INT_ROM_PIN 3
-#define RAISE_INT_PIN 5
+//#define RAISE_INT_PIN 5
 
 #define PIN_HI(PORT, HI_MASK) ((PORT) |= (HI_MASK))
 #define PIN_LO(PORT, LO_MASK) ((PORT) &= (LO_MASK))
@@ -51,14 +52,46 @@
 #define RELEASE_CPU_TRAP() (PIN_LO(CTL_PORT, RELEASE_LO_MASK))
 #define REARM_CPU_TRAP() (PIN_HI(CTL_PORT, RELEASE_HI_MASK))
 
-#define SIGNAL_NMI() (PIN_LO(CTL_PORT, NMI_LO_MASK))
-#define FREE_NMI() (PIN_HI(CTL_PORT, NMI_HI_MASK))
+#define INT_DIR DDRE
+#define INT_PORT PORTE
+#define INT_HI_MASK B00001000
+#define INT_LO_MASK B11110111
 
-#define SIGNAL_INT() (digitalWrite(RAISE_INT_PIN, 0));
-#define FREE_INT() (digitalWrite(RAISE_INT_PIN, 1))
+#define SIGNAL_NMI() \
+{\
+	CTL_DIR |= NMI_HI_MASK; \
+	PIN_LO(CTL_PORT, NMI_LO_MASK); \
+}
 
-#define SIGNAL_RESET() (PIN_LO(RST_PORT, RST_LO_MASK))
-#define FREE_RESET() (PIN_HI(RST_PORT, RST_HI_MASK))
+#define FREE_NMI() \
+{\
+	CTL_DIR |= NMI_LO_MASK; \
+	PIN_HI(CTL_PORT, NMI_HI_MASK); \
+} 
+
+#define SIGNAL_INT() \
+{\
+	INT_DIR |= INT_HI_MASK; \
+	PIN_LO(INT_PORT, INT_LO_MASK); \
+}
+
+#define FREE_INT() \
+{\
+	INT_DIR &= INT_LO_MASK; \
+	PIN_HI(INT_PORT, INT_HI_MASK); \
+}
+
+#define SIGNAL_RESET() \
+{\
+	RST_DIR |= RST_HI_MASK; \
+	PIN_LO(RST_PORT, RST_LO_MASK); \
+}
+
+#define FREE_RESET() \
+{\
+	RST_DIR &= RST_LO_MASK; \
+	PIN_HI(RST_PORT, RST_HI_MASK); \
+}
 
 #define ENABLE_PERIPHERAL() PIN_HI(ENPERI_PORT, ENPERI_HI_MASK)
 #define DISABLE_PERIPHERAL() PIN_LO(ENPERI_PORT, ENPERI_LO_MASK)
@@ -111,7 +144,9 @@ inline void ZXShield::Initialize()
 	ENPERI_DIR = ENPERI_DIRMASK;
 
 	//TODO: Create masks and so on
-	pinMode(RAISE_INT_PIN, OUTPUT);
+	pinMode(INT_PERI_PIN, INPUT);
+	pinMode(INT_ROM_PIN, INPUT);
+	//pinMode(RAISE_INT_PIN, INPUT);
 
 	FREE_INT();
 	FREE_NMI();
@@ -139,6 +174,8 @@ inline void ZXShield::OutputPeripheralByte(byte Value)
 	DATA_OUT = Value;
 	RELEASE_CPU_TRAP();
 	REARM_CPU_TRAP();
+	asm("nop");
+	asm("nop");
 	asm("nop");
 	asm("nop");
 	asm("nop");

@@ -1,0 +1,66 @@
+﻿; Code file
+start: .org #0000
+
+status:                     ;used to signal statuses between firmware and program
+.db #00
+startAddress:               ;stores the program execute address
+.dw #0000
+segmentDest:                ;stores segment destination address
+.dw #0000
+segmentSize:                ;stores segment size
+.dw #0000
+
+
+NMIHandler:
+.org #0066
+
+DI                          ;disable interrupts
+
+;POP HL                      ;remove from the stack the old return address
+
+copyLoop:
+
+LD HL, segmentSource        ;copy transfer info
+LD DE, (segmentDest)
+LD BC, (segmentSize)
+
+LDIR                        ;transfer segment
+
+LD A, 1                     ;signal copy
+LD (status), A
+
+waitLoop:
+LD A, (status)              ;copy status
+XOR A, #AA                  ;check for final
+JP Z, executeProgram        
+
+LD A, (status)              ;copy status again
+XOR A, #55                  ;check for next segment
+
+JP NZ, waitLoop             ;wait again...
+
+LD A, 0                     ;reset status
+LD (status), A
+
+JP copyLoop                 ;jump to next segment transfer
+
+executeProgram:
+
+
+LD SP, #7519
+LD BC, #0054
+PUSH BC
+LD BC, (startAddress)
+PUSH BC
+LD DE, #5D1F
+LD IX, 0
+LD IY, #5C3A
+LD A, 0
+LD R, A
+POP AF
+
+EI
+
+RETN
+
+segmentSource:
