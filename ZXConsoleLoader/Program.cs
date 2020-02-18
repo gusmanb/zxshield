@@ -5,6 +5,7 @@ using System.IO.Ports;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
+using ZXSerialLoaderLibrary;
 
 namespace ZXSerialLoaderClient
 {
@@ -30,7 +31,7 @@ namespace ZXSerialLoaderClient
 
             ZXSerialLoader loader = new ZXSerialLoader();
 
-            var result = await loader.LoadFile(args[0], args[1], 2048, new Action<int>((progress) =>
+            var result = await Task.Run(() => loader.LoadFile(args[0], args[1], 2048, new Action<int>((progress) =>
             {
                 Console.CursorLeft = x;
                 Console.CursorTop = y;
@@ -42,7 +43,7 @@ namespace ZXSerialLoaderClient
                 Console.WriteLine(consoleMessage);
                 Console.WriteLine();
 
-            }));
+            })));
 
             Console.CursorLeft = x;
             Console.CursorTop = y;
@@ -57,7 +58,7 @@ namespace ZXSerialLoaderClient
                 case ZXSerialLoader.ZXSerialLoaderResult.Unsupported:
                     Console.WriteLine("Unsupported file format");
                     break;
-                case ZXSerialLoader.ZXSerialLoaderResult.FileLoadError:
+                case ZXSerialLoader.ZXSerialLoaderResult.FileError:
                     Console.WriteLine("Error loading file");
                     break;
                 case ZXSerialLoader.ZXSerialLoaderResult.UnknownResponse:

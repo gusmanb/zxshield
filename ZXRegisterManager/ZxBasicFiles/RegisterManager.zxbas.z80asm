@@ -362,15 +362,10 @@ _selectRegister:
 	push ix
 	ld ix, 0
 	add ix, sp
-	ld hl, -10
-	add hl, sp
-	ld sp, hl
-	ld (hl), 0
-	ld bc, 9
-	ld d, h
-	ld e, l
-	inc de
-	ldir
+	ld hl, 0
+	push hl
+	push hl
+	push hl
 __LABEL__regSelLoop:
 	ld hl, __LABEL33
 	xor a
@@ -385,17 +380,17 @@ __LABEL__regSelLoop:
 	call _input
 	ld d, h
 	ld e, l
-	ld bc, -3
+	ld bc, -4
 	call __PSTORE_STR2
-	ld l, (ix-3)
-	ld h, (ix-2)
+	ld l, (ix-4)
+	ld h, (ix-3)
 	xor a
 	call VAL
 	call __FTOU32REG
-	ld (ix-5), l
-	ld (ix-4), h
-	ld l, (ix-5)
-	ld h, (ix-4)
+	ld (ix-6), l
+	ld (ix-5), h
+	ld l, (ix-6)
+	ld h, (ix-5)
 	push hl
 	ld hl, 255
 	pop de
@@ -408,8 +403,8 @@ __LABEL__regSelLoop:
 	call PRINT_EOL
 	jp __LABEL__regSelLoop
 __LABEL37:
-	ld l, (ix-3)
-	ld h, (ix-2)
+	ld l, (ix-4)
+	ld h, (ix-3)
 	xor a
 	call VAL
 	call __FTOU32REG
@@ -521,20 +516,9 @@ __LABEL59:
 	in a, (c)
 	ld (_regLen), a
 __LABEL61:
-	push ix
-	pop hl
-	ld de, -10
-	add hl, de
-	call __PLOADF
-	push bc
-	push de
-	push af
-	ld a, 088h
-	ld de, 0007Ah
-	ld bc, 00000h
-	call __EQF
-	or a
-	jp nz, __LABEL59
+	ld a, (ix-2)
+	sub 250
+	jp z, __LABEL59
 __LABEL60:
 	ld hl, __LABEL62
 	xor a
@@ -545,8 +529,8 @@ __LABEL60:
 _selectRegister__leave:
 	ex af, af'
 	exx
-	ld l, (ix-3)
-	ld h, (ix-2)
+	ld l, (ix-4)
+	ld h, (ix-3)
 	call __MEM_FREE
 	ex af, af'
 	exx
@@ -690,9 +674,6 @@ _readRegister:
 	xor a
 	call __PRINTSTR
 	call PRINT_EOL
-	ld a, 000h
-	ld de, 00000h
-	ld bc, 00000h
 	jp _readRegister__leave
 __LABEL73:
 	ld a, (_regType)
@@ -911,9 +892,6 @@ _writeRegister:
 	xor a
 	call __PRINTSTR
 	call PRINT_EOL
-	ld a, 000h
-	ld de, 00000h
-	ld bc, 00000h
 	jp _writeRegister__leave
 __LABEL91:
 	ld a, (_regType)
@@ -1107,13 +1085,13 @@ _writeRegister__leave:
 	ret
 __LABEL2:
 	DEFW 0001h
-	DEFB 61h
+	DEFB 65h
 __LABEL5:
 	DEFW 0001h
-	DEFB 6Ch
+	DEFB 72h
 __LABEL8:
 	DEFW 0001h
-	DEFB 65h
+	DEFB 77h
 __LABEL11:
 	DEFW 0004h
 	DEFB 42h
@@ -1143,17 +1121,13 @@ __LABEL34:
 	DEFB 52h
 	DEFB 53h
 __LABEL35:
-	DEFW 001Bh
+	DEFW 0017h
 	DEFB 53h
 	DEFB 65h
 	DEFB 6Ch
 	DEFB 65h
 	DEFB 63h
-	DEFB 63h
-	DEFB 69h
-	DEFB 6Fh
-	DEFB 6Eh
-	DEFB 65h
+	DEFB 74h
 	DEFB 20h
 	DEFB 72h
 	DEFB 65h
@@ -1161,8 +1135,8 @@ __LABEL35:
 	DEFB 69h
 	DEFB 73h
 	DEFB 74h
+	DEFB 65h
 	DEFB 72h
-	DEFB 6Fh
 	DEFB 20h
 	DEFB 28h
 	DEFB 30h
@@ -1172,6 +1146,62 @@ __LABEL35:
 	DEFB 35h
 	DEFB 29h
 __LABEL38:
+	DEFW 000Eh
+	DEFB 57h
+	DEFB 72h
+	DEFB 6Fh
+	DEFB 6Eh
+	DEFB 67h
+	DEFB 20h
+	DEFB 72h
+	DEFB 65h
+	DEFB 67h
+	DEFB 69h
+	DEFB 73h
+	DEFB 74h
+	DEFB 65h
+	DEFB 72h
+__LABEL39:
+	DEFW 0013h
+	DEFB 53h
+	DEFB 65h
+	DEFB 6Ch
+	DEFB 65h
+	DEFB 63h
+	DEFB 74h
+	DEFB 65h
+	DEFB 64h
+	DEFB 20h
+	DEFB 72h
+	DEFB 65h
+	DEFB 67h
+	DEFB 69h
+	DEFB 73h
+	DEFB 74h
+	DEFB 65h
+	DEFB 72h
+	DEFB 3Ah
+	DEFB 20h
+__LABEL40:
+	DEFW 0011h
+	DEFB 52h
+	DEFB 65h
+	DEFB 63h
+	DEFB 65h
+	DEFB 69h
+	DEFB 76h
+	DEFB 65h
+	DEFB 64h
+	DEFB 20h
+	DEFB 63h
+	DEFB 6Fh
+	DEFB 6Eh
+	DEFB 66h
+	DEFB 69h
+	DEFB 67h
+	DEFB 3Ah
+	DEFB 20h
+__LABEL43:
 	DEFW 0013h
 	DEFB 52h
 	DEFB 65h
@@ -1179,81 +1209,13 @@ __LABEL38:
 	DEFB 69h
 	DEFB 73h
 	DEFB 74h
-	DEFB 72h
-	DEFB 6Fh
-	DEFB 20h
-	DEFB 69h
-	DEFB 6Eh
-	DEFB 63h
-	DEFB 6Fh
-	DEFB 72h
-	DEFB 72h
 	DEFB 65h
-	DEFB 63h
+	DEFB 72h
+	DEFB 20h
 	DEFB 74h
-	DEFB 6Fh
-__LABEL39:
-	DEFW 0017h
-	DEFB 52h
-	DEFB 65h
-	DEFB 67h
-	DEFB 69h
-	DEFB 73h
-	DEFB 74h
-	DEFB 72h
-	DEFB 6Fh
-	DEFB 20h
-	DEFB 73h
-	DEFB 65h
-	DEFB 6Ch
-	DEFB 65h
-	DEFB 63h
-	DEFB 63h
-	DEFB 69h
-	DEFB 6Fh
-	DEFB 6Eh
-	DEFB 61h
-	DEFB 64h
-	DEFB 6Fh
-	DEFB 3Ah
-	DEFB 20h
-__LABEL40:
-	DEFW 0011h
-	DEFB 43h
-	DEFB 6Fh
-	DEFB 6Eh
-	DEFB 66h
-	DEFB 69h
-	DEFB 67h
-	DEFB 20h
-	DEFB 72h
-	DEFB 65h
-	DEFB 63h
-	DEFB 69h
-	DEFB 62h
-	DEFB 69h
-	DEFB 64h
-	DEFB 61h
-	DEFB 3Ah
-	DEFB 20h
-__LABEL43:
-	DEFW 0016h
-	DEFB 54h
-	DEFB 69h
+	DEFB 79h
 	DEFB 70h
-	DEFB 6Fh
-	DEFB 20h
-	DEFB 64h
 	DEFB 65h
-	DEFB 20h
-	DEFB 72h
-	DEFB 65h
-	DEFB 67h
-	DEFB 69h
-	DEFB 73h
-	DEFB 74h
-	DEFB 72h
-	DEFB 6Fh
 	DEFB 3Ah
 	DEFB 20h
 	DEFB 62h
@@ -1261,23 +1223,20 @@ __LABEL43:
 	DEFB 74h
 	DEFB 65h
 __LABEL46:
-	DEFW 0019h
-	DEFB 54h
-	DEFB 69h
-	DEFB 70h
-	DEFB 6Fh
-	DEFB 20h
-	DEFB 64h
-	DEFB 65h
-	DEFB 20h
-	DEFB 72h
+	DEFW 0016h
+	DEFB 52h
 	DEFB 65h
 	DEFB 67h
 	DEFB 69h
 	DEFB 73h
 	DEFB 74h
+	DEFB 65h
 	DEFB 72h
-	DEFB 6Fh
+	DEFB 20h
+	DEFB 74h
+	DEFB 79h
+	DEFB 70h
+	DEFB 65h
 	DEFB 3Ah
 	DEFB 20h
 	DEFB 69h
@@ -1288,23 +1247,20 @@ __LABEL46:
 	DEFB 65h
 	DEFB 72h
 __LABEL49:
-	DEFW 0018h
-	DEFB 54h
-	DEFB 69h
-	DEFB 70h
-	DEFB 6Fh
-	DEFB 20h
-	DEFB 64h
-	DEFB 65h
-	DEFB 20h
-	DEFB 72h
+	DEFW 0015h
+	DEFB 52h
 	DEFB 65h
 	DEFB 67h
 	DEFB 69h
 	DEFB 73h
 	DEFB 74h
+	DEFB 65h
 	DEFB 72h
-	DEFB 6Fh
+	DEFB 20h
+	DEFB 74h
+	DEFB 79h
+	DEFB 70h
+	DEFB 65h
 	DEFB 3Ah
 	DEFB 20h
 	DEFB 73h
@@ -1314,14 +1270,14 @@ __LABEL49:
 	DEFB 61h
 	DEFB 6Dh
 __LABEL50:
-	DEFW 001Dh
-	DEFB 54h
-	DEFB 69h
-	DEFB 70h
+	DEFW 0016h
+	DEFB 55h
+	DEFB 6Eh
+	DEFB 6Bh
+	DEFB 6Eh
 	DEFB 6Fh
-	DEFB 20h
-	DEFB 64h
-	DEFB 65h
+	DEFB 77h
+	DEFB 6Eh
 	DEFB 20h
 	DEFB 72h
 	DEFB 65h
@@ -1329,143 +1285,104 @@ __LABEL50:
 	DEFB 69h
 	DEFB 73h
 	DEFB 74h
-	DEFB 72h
-	DEFB 6Fh
-	DEFB 20h
-	DEFB 64h
 	DEFB 65h
-	DEFB 73h
-	DEFB 63h
-	DEFB 6Fh
-	DEFB 6Eh
-	DEFB 6Fh
-	DEFB 63h
-	DEFB 69h
-	DEFB 64h
-	DEFB 6Fh
+	DEFB 72h
+	DEFB 20h
+	DEFB 74h
+	DEFB 79h
+	DEFB 70h
+	DEFB 65h
 	DEFB 21h
 __LABEL53:
-	DEFW 0011h
-	DEFB 4Ch
+	DEFW 000Ch
+	DEFB 52h
 	DEFB 65h
-	DEFB 63h
-	DEFB 74h
-	DEFB 75h
-	DEFB 72h
 	DEFB 61h
-	DEFB 20h
-	DEFB 70h
-	DEFB 65h
-	DEFB 72h
-	DEFB 6Dh
-	DEFB 69h
-	DEFB 74h
-	DEFB 69h
-	DEFB 64h
-	DEFB 61h
-__LABEL54:
-	DEFW 0014h
-	DEFB 4Ch
-	DEFB 65h
-	DEFB 63h
-	DEFB 74h
-	DEFB 75h
-	DEFB 72h
-	DEFB 61h
-	DEFB 20h
-	DEFB 6Eh
-	DEFB 6Fh
-	DEFB 20h
-	DEFB 70h
-	DEFB 65h
-	DEFB 72h
-	DEFB 6Dh
-	DEFB 69h
-	DEFB 74h
-	DEFB 69h
-	DEFB 64h
-	DEFB 61h
-__LABEL57:
-	DEFW 0013h
-	DEFB 45h
-	DEFB 73h
-	DEFB 63h
-	DEFB 72h
-	DEFB 69h
-	DEFB 74h
-	DEFB 75h
-	DEFB 72h
-	DEFB 61h
-	DEFB 20h
-	DEFB 70h
-	DEFB 65h
-	DEFB 72h
-	DEFB 6Dh
-	DEFB 69h
-	DEFB 74h
-	DEFB 69h
-	DEFB 64h
-	DEFB 61h
-__LABEL58:
-	DEFW 0016h
-	DEFB 45h
-	DEFB 73h
-	DEFB 63h
-	DEFB 72h
-	DEFB 69h
-	DEFB 74h
-	DEFB 75h
-	DEFB 72h
-	DEFB 61h
-	DEFB 20h
-	DEFB 6Eh
-	DEFB 6Fh
-	DEFB 20h
-	DEFB 70h
-	DEFB 65h
-	DEFB 72h
-	DEFB 6Dh
-	DEFB 69h
-	DEFB 74h
-	DEFB 69h
-	DEFB 64h
-	DEFB 61h
-__LABEL62:
-	DEFW 0017h
-	DEFB 4Ch
-	DEFB 6Fh
-	DEFB 6Eh
-	DEFB 67h
-	DEFB 69h
-	DEFB 74h
-	DEFB 75h
 	DEFB 64h
 	DEFB 20h
-	DEFB 64h
-	DEFB 65h
+	DEFB 61h
 	DEFB 6Ch
+	DEFB 6Ch
+	DEFB 6Fh
+	DEFB 77h
+	DEFB 65h
+	DEFB 64h
+__LABEL54:
+	DEFW 000Fh
+	DEFB 52h
+	DEFB 65h
+	DEFB 61h
+	DEFB 64h
 	DEFB 20h
+	DEFB 64h
+	DEFB 69h
+	DEFB 73h
+	DEFB 61h
+	DEFB 6Ch
+	DEFB 6Ch
+	DEFB 6Fh
+	DEFB 77h
+	DEFB 65h
+	DEFB 64h
+__LABEL57:
+	DEFW 000Dh
+	DEFB 57h
 	DEFB 72h
+	DEFB 69h
+	DEFB 74h
+	DEFB 65h
+	DEFB 20h
+	DEFB 61h
+	DEFB 6Ch
+	DEFB 6Ch
+	DEFB 6Fh
+	DEFB 77h
+	DEFB 65h
+	DEFB 64h
+__LABEL58:
+	DEFW 0010h
+	DEFB 57h
+	DEFB 72h
+	DEFB 69h
+	DEFB 74h
+	DEFB 65h
+	DEFB 20h
+	DEFB 64h
+	DEFB 69h
+	DEFB 73h
+	DEFB 61h
+	DEFB 6Ch
+	DEFB 6Ch
+	DEFB 6Fh
+	DEFB 77h
+	DEFB 65h
+	DEFB 64h
+__LABEL62:
+	DEFW 0011h
+	DEFB 52h
 	DEFB 65h
 	DEFB 67h
 	DEFB 69h
 	DEFB 73h
 	DEFB 74h
+	DEFB 65h
 	DEFB 72h
-	DEFB 6Fh
+	DEFB 20h
+	DEFB 6Ch
+	DEFB 65h
+	DEFB 6Eh
+	DEFB 67h
+	DEFB 74h
+	DEFB 68h
 	DEFB 3Ah
 	DEFB 20h
 __LABEL63:
-	DEFW 0015h
-	DEFB 53h
-	DEFB 65h
-	DEFB 6Ch
-	DEFB 65h
-	DEFB 63h
-	DEFB 63h
-	DEFB 69h
+	DEFW 0011h
+	DEFB 43h
+	DEFB 68h
 	DEFB 6Fh
-	DEFB 6Eh
+	DEFB 6Fh
+	DEFB 73h
 	DEFB 65h
 	DEFB 20h
 	DEFB 6Fh
@@ -1473,26 +1390,25 @@ __LABEL63:
 	DEFB 65h
 	DEFB 72h
 	DEFB 61h
-	DEFB 63h
+	DEFB 74h
 	DEFB 69h
 	DEFB 6Fh
 	DEFB 6Eh
 	DEFB 3Ah
 __LABEL64:
-	DEFW 0016h
+	DEFW 0015h
 	DEFB 20h
 	DEFB 20h
 	DEFB 20h
 	DEFB 20h
 	DEFB 28h
-	DEFB 61h
+	DEFB 65h
 	DEFB 29h
-	DEFB 63h
-	DEFB 74h
-	DEFB 69h
-	DEFB 76h
+	DEFB 6Eh
 	DEFB 61h
-	DEFB 72h
+	DEFB 62h
+	DEFB 6Ch
+	DEFB 65h
 	DEFB 20h
 	DEFB 72h
 	DEFB 65h
@@ -1500,8 +1416,8 @@ __LABEL64:
 	DEFB 69h
 	DEFB 73h
 	DEFB 74h
+	DEFB 65h
 	DEFB 72h
-	DEFB 6Fh
 __LABEL65:
 	DEFW 0013h
 	DEFB 20h
@@ -1509,11 +1425,11 @@ __LABEL65:
 	DEFB 20h
 	DEFB 20h
 	DEFB 28h
-	DEFB 6Ch
+	DEFB 72h
 	DEFB 29h
 	DEFB 65h
-	DEFB 65h
-	DEFB 72h
+	DEFB 61h
+	DEFB 64h
 	DEFB 20h
 	DEFB 72h
 	DEFB 65h
@@ -1521,24 +1437,21 @@ __LABEL65:
 	DEFB 69h
 	DEFB 73h
 	DEFB 74h
+	DEFB 65h
 	DEFB 72h
-	DEFB 6Fh
 __LABEL66:
-	DEFW 0017h
+	DEFW 0014h
 	DEFB 20h
 	DEFB 20h
 	DEFB 20h
 	DEFB 20h
 	DEFB 28h
-	DEFB 65h
+	DEFB 77h
 	DEFB 29h
-	DEFB 73h
-	DEFB 63h
 	DEFB 72h
 	DEFB 69h
-	DEFB 62h
-	DEFB 69h
-	DEFB 72h
+	DEFB 74h
+	DEFB 65h
 	DEFB 20h
 	DEFB 72h
 	DEFB 65h
@@ -1546,8 +1459,8 @@ __LABEL66:
 	DEFB 69h
 	DEFB 73h
 	DEFB 74h
+	DEFB 65h
 	DEFB 72h
-	DEFB 6Fh
 __LABEL67:
 	DEFW 000Bh
 	DEFB 20h
@@ -1555,99 +1468,90 @@ __LABEL67:
 	DEFB 20h
 	DEFB 20h
 	DEFB 28h
-	DEFB 73h
-	DEFB 29h
-	DEFB 61h
 	DEFB 6Ch
-	DEFB 69h
-	DEFB 72h
+	DEFB 29h
+	DEFB 65h
+	DEFB 61h
+	DEFB 76h
+	DEFB 65h
 __LABEL68:
 	DEFW 0001h
-	DEFB 73h
+	DEFB 6Ch
 __LABEL71:
-	DEFW 0015h
-	DEFB 4Fh
+	DEFW 0013h
+	DEFB 49h
+	DEFB 6Eh
+	DEFB 63h
+	DEFB 6Fh
+	DEFB 72h
+	DEFB 72h
+	DEFB 65h
+	DEFB 63h
+	DEFB 74h
+	DEFB 20h
+	DEFB 6Fh
 	DEFB 70h
 	DEFB 65h
 	DEFB 72h
-	DEFB 74h
 	DEFB 61h
-	DEFB 63h
+	DEFB 74h
 	DEFB 69h
 	DEFB 6Fh
 	DEFB 6Eh
-	DEFB 20h
-	DEFB 69h
-	DEFB 6Eh
-	DEFB 63h
-	DEFB 6Fh
-	DEFB 72h
-	DEFB 72h
-	DEFB 65h
-	DEFB 63h
-	DEFB 74h
-	DEFB 61h
 __LABEL74:
-	DEFW 0013h
-	DEFB 52h
-	DEFB 65h
-	DEFB 67h
-	DEFB 69h
-	DEFB 73h
+	DEFW 000Ch
+	DEFB 4Eh
+	DEFB 6Fh
 	DEFB 74h
+	DEFB 20h
 	DEFB 72h
-	DEFB 6Fh
-	DEFB 20h
-	DEFB 6Eh
-	DEFB 6Fh
-	DEFB 20h
-	DEFB 6Ch
 	DEFB 65h
-	DEFB 67h
-	DEFB 69h
+	DEFB 61h
+	DEFB 64h
+	DEFB 61h
 	DEFB 62h
 	DEFB 6Ch
 	DEFB 65h
 __LABEL77:
 	DEFW 000Ch
-	DEFB 56h
-	DEFB 61h
-	DEFB 6Ch
-	DEFB 6Fh
-	DEFB 72h
-	DEFB 20h
-	DEFB 62h
+	DEFB 42h
 	DEFB 79h
 	DEFB 74h
+	DEFB 65h
+	DEFB 20h
+	DEFB 76h
+	DEFB 61h
+	DEFB 6Ch
+	DEFB 75h
 	DEFB 65h
 	DEFB 3Ah
 	DEFB 20h
 __LABEL80:
 	DEFW 000Fh
-	DEFB 56h
-	DEFB 61h
-	DEFB 6Ch
-	DEFB 6Fh
-	DEFB 72h
-	DEFB 20h
-	DEFB 69h
+	DEFB 49h
 	DEFB 6Eh
 	DEFB 74h
 	DEFB 65h
 	DEFB 67h
 	DEFB 65h
 	DEFB 72h
+	DEFB 20h
+	DEFB 76h
+	DEFB 61h
+	DEFB 6Ch
+	DEFB 75h
+	DEFB 65h
 	DEFB 3Ah
 	DEFB 20h
 __LABEL83:
 	DEFW 0011h
-	DEFB 4Ch
+	DEFB 52h
 	DEFB 65h
-	DEFB 79h
-	DEFB 65h
-	DEFB 6Eh
+	DEFB 61h
 	DEFB 64h
-	DEFB 6Fh
+	DEFB 69h
+	DEFB 6Eh
+	DEFB 67h
 	DEFB 20h
 	DEFB 73h
 	DEFB 74h
@@ -1660,40 +1564,31 @@ __LABEL83:
 	DEFB 2Eh
 __LABEL89:
 	DEFW 000Dh
-	DEFB 56h
-	DEFB 61h
-	DEFB 6Ch
-	DEFB 6Fh
-	DEFB 72h
-	DEFB 20h
-	DEFB 73h
+	DEFB 53h
 	DEFB 74h
 	DEFB 72h
 	DEFB 65h
 	DEFB 61h
 	DEFB 6Dh
+	DEFB 20h
+	DEFB 76h
+	DEFB 61h
+	DEFB 6Ch
+	DEFB 75h
+	DEFB 65h
 	DEFB 3Ah
 __LABEL92:
-	DEFW 0016h
-	DEFB 52h
-	DEFB 65h
-	DEFB 67h
-	DEFB 69h
-	DEFB 73h
+	DEFW 000Dh
+	DEFB 4Eh
+	DEFB 6Fh
 	DEFB 74h
+	DEFB 20h
+	DEFB 77h
 	DEFB 72h
-	DEFB 6Fh
-	DEFB 20h
-	DEFB 6Eh
-	DEFB 6Fh
-	DEFB 20h
+	DEFB 69h
+	DEFB 74h
 	DEFB 65h
-	DEFB 73h
-	DEFB 63h
-	DEFB 72h
-	DEFB 69h
-	DEFB 62h
-	DEFB 69h
+	DEFB 61h
 	DEFB 62h
 	DEFB 6Ch
 	DEFB 65h
@@ -1702,19 +1597,27 @@ __LABEL95:
 	DEFB 56h
 	DEFB 61h
 	DEFB 6Ch
-	DEFB 6Fh
-	DEFB 72h
+	DEFB 75h
+	DEFB 65h
 	DEFB 3Fh
 __LABEL100:
-	DEFW 0013h
-	DEFB 45h
-	DEFB 6Eh
-	DEFB 76h
-	DEFB 69h
-	DEFB 61h
+	DEFW 0008h
+	DEFB 53h
+	DEFB 65h
 	DEFB 6Eh
 	DEFB 64h
-	DEFB 6Fh
+	DEFB 69h
+	DEFB 6Eh
+	DEFB 67h
+	DEFB 20h
+__LABEL101:
+	DEFW 0010h
+	DEFB 20h
+	DEFB 62h
+	DEFB 79h
+	DEFB 74h
+	DEFB 65h
+	DEFB 73h
 	DEFB 20h
 	DEFB 73h
 	DEFB 74h
@@ -1722,23 +1625,11 @@ __LABEL100:
 	DEFB 65h
 	DEFB 61h
 	DEFB 6Dh
-	DEFB 20h
-	DEFB 64h
-	DEFB 65h
-	DEFB 20h
-__LABEL101:
-	DEFW 0009h
-	DEFB 20h
-	DEFB 62h
-	DEFB 79h
-	DEFB 74h
-	DEFB 65h
-	DEFB 73h
 	DEFB 2Eh
 	DEFB 2Eh
 	DEFB 2Eh
 __LABEL107:
-	DEFW 000Eh
+	DEFW 000Bh
 	DEFB 53h
 	DEFB 74h
 	DEFB 72h
@@ -1746,13 +1637,10 @@ __LABEL107:
 	DEFB 61h
 	DEFB 6Dh
 	DEFB 20h
+	DEFB 73h
 	DEFB 65h
 	DEFB 6Eh
-	DEFB 76h
-	DEFB 69h
-	DEFB 61h
-	DEFB 64h
-	DEFB 6Fh
+	DEFB 74h
 #line 1 "alloc.asm"
 
 ; vim: ts=4:et:sw=4:
@@ -2106,7 +1994,7 @@ __MEM_SUBTRACT:
 
 	        ENDP
 
-#line 1740 "RegisterManager.zxbas"
+#line 1628 "RegisterManager.zxbas"
 #line 1 "asc.asm"
 
 	; Returns the ascii code for the given str
@@ -2335,7 +2223,7 @@ __ASC_END:
 
 		ret
 		ENDP
-#line 1741 "RegisterManager.zxbas"
+#line 1629 "RegisterManager.zxbas"
 #line 1 "band32.asm"
 
 	; FASTCALL bitwise and 32 version.
@@ -2374,7 +2262,7 @@ __BAND32:
 
 	    ret
 
-#line 1742 "RegisterManager.zxbas"
+#line 1630 "RegisterManager.zxbas"
 #line 1 "bor32.asm"
 
 	; FASTCALL bitwise or 32 version.
@@ -2413,7 +2301,7 @@ __BOR32:
 
 	    ret
 
-#line 1743 "RegisterManager.zxbas"
+#line 1631 "RegisterManager.zxbas"
 #line 1 "chr.asm"
 
 	; CHR$(x, y, x) returns the string CHR$(x) + CHR$(y) + CHR$(z)
@@ -2491,7 +2379,7 @@ __CHR_END:
 
 			ENDP
 
-#line 1744 "RegisterManager.zxbas"
+#line 1632 "RegisterManager.zxbas"
 #line 1 "cls.asm"
 
 	; JUMPS directly to spectrum CLS
@@ -2574,7 +2462,7 @@ __CLS_SCR:
 								    ; to get the start of the screen
 		ENDP
 
-#line 1745 "RegisterManager.zxbas"
+#line 1633 "RegisterManager.zxbas"
 #line 1 "copy_attr.asm"
 
 
@@ -3638,7 +3526,7 @@ __REFRESH_TMP:
 
 		ENDP
 
-#line 1746 "RegisterManager.zxbas"
+#line 1634 "RegisterManager.zxbas"
 #line 1 "eq16.asm"
 
 __EQ16:	; Test if 16bit values HL == DE
@@ -3649,10 +3537,10 @@ __EQ16:	; Test if 16bit values HL == DE
 			inc a
 			ret
 
-#line 1747 "RegisterManager.zxbas"
-#line 1 "eqf.asm"
+#line 1635 "RegisterManager.zxbas"
 
-#line 1 "u32tofreg.asm"
+
+#line 1 "ftou32reg.asm"
 
 #line 1 "neg32.asm"
 
@@ -3686,99 +3574,7 @@ __NEG32: ; Negates DEHL (Two's complement)
 		inc de
 		ret
 
-#line 2 "u32tofreg.asm"
-__I8TOFREG:
-		ld l, a
-		rlca
-		sbc a, a	; A = SGN(A)
-		ld h, a
-		ld e, a
-		ld d, a
-
-__I32TOFREG:	; Converts a 32bit signed integer (stored in DEHL)
-					; to a Floating Point Number returned in (A ED CB)
-
-		ld a, d
-		or a		; Test sign
-
-		jp p, __U32TOFREG	; It was positive, proceed as 32bit unsigned
-
-		call __NEG32		; Convert it to positive
-		call __U32TOFREG	; Convert it to Floating point
-
-		set 7, e			; Put the sign bit (negative) in the 31bit of mantissa
-		ret
-
-__U8TOFREG:
-					; Converts an unsigned 8 bit (A) to Floating point
-		ld l, a
-		ld h, 0
-		ld e, h
-		ld d, h
-
-__U32TOFREG:	; Converts an unsigned 32 bit integer (DEHL)
-					; to a Floating point number returned in A ED CB
-
-	    PROC
-
-	    LOCAL __U32TOFREG_END
-
-		ld a, d
-		or e
-		or h
-		or l
-	    ld b, d
-		ld c, e		; Returns 00 0000 0000 if ZERO
-		ret z
-
-		push de
-		push hl
-
-		exx
-		pop de  ; Loads integer into B'C' D'E'
-		pop bc
-		exx
-
-		ld l, 128	; Exponent
-		ld bc, 0	; DEBC = 0
-		ld d, b
-		ld e, c
-
-__U32TOFREG_LOOP: ; Also an entry point for __F16TOFREG
-		exx
-		ld a, d 	; B'C'D'E' == 0 ?
-		or e
-		or b
-		or c
-		jp z, __U32TOFREG_END	; We are done
-
-		srl b ; Shift B'C' D'E' >> 1, output bit stays in Carry
-		rr c
-		rr d
-		rr e
-		exx
-
-		rr e ; Shift EDCB >> 1, inserting the carry on the left
-		rr d
-		rr c
-		rr b
-
-		inc l	; Increment exponent
-		jp __U32TOFREG_LOOP
-
-
-__U32TOFREG_END:
-		exx
-	    ld a, l     ; Puts the exponent in a
-		res 7, e	; Sets the sign bit to 0 (positive)
-
-		ret
-	    ENDP
-
-#line 2 "eqf.asm"
-#line 1 "ftou32reg.asm"
-
-
+#line 2 "ftou32reg.asm"
 
 __FTOU32REG:	; Converts a Float to (un)signed 32 bit integer (NOTE: It's ALWAYS 32 bit signed)
 					; Input FP number in A EDCB (A exponent, EDCB mantissa)
@@ -3871,83 +3667,7 @@ __FTOU8:	; Converts float in C ED LH to Unsigned byte in A
 		ld a, l
 		ret
 
-#line 3 "eqf.asm"
-#line 1 "stackf.asm"
-
-	; -------------------------------------------------------------
-	; Functions to manage FP-Stack of the ZX Spectrum ROM CALC
-	; -------------------------------------------------------------
-
-
-	__FPSTACK_PUSH EQU 2AB6h	; Stores an FP number into the ROM FP stack (A, ED CB)
-	__FPSTACK_POP  EQU 2BF1h	; Pops an FP number out of the ROM FP stack (A, ED CB)
-
-__FPSTACK_PUSH2: ; Pushes Current A ED CB registers and top of the stack on (SP + 4)
-	                 ; Second argument to push into the stack calculator is popped out of the stack
-	                 ; Since the caller routine also receives the parameters into the top of the stack
-	                 ; four bytes must be removed from SP before pop them out
-
-	    call __FPSTACK_PUSH ; Pushes A ED CB into the FP-STACK
-	    exx
-	    pop hl       ; Caller-Caller return addr
-	    exx
-	    pop hl       ; Caller return addr
-
-	    pop af
-	    pop de
-	    pop bc
-
-	    push hl      ; Caller return addr
-	    exx
-	    push hl      ; Caller-Caller return addr
-	    exx
-
-	    jp __FPSTACK_PUSH
-
-
-__FPSTACK_I16:	; Pushes 16 bits integer in HL into the FP ROM STACK
-					; This format is specified in the ZX 48K Manual
-					; You can push a 16 bit signed integer as
-					; 0 SS LL HH 0, being SS the sign and LL HH the low
-					; and High byte respectively
-		ld a, h
-		rla			; sign to Carry
-		sbc	a, a	; 0 if positive, FF if negative
-		ld e, a
-		ld d, l
-		ld c, h
-		xor a
-		ld b, a
-		jp __FPSTACK_PUSH
-#line 4 "eqf.asm"
-
-	; -------------------------------------------------------------
-	; Floating point library using the FP ROM Calculator (ZX 48K)
-
-	; All of them uses C EDHL registers as 1st paramter.
-	; For binary operators, the 2n operator must be pushed into the
-	; stack, in the order BC DE HL (B not used).
-	;
-	; Uses CALLEE convention
-	; -------------------------------------------------------------
-
-
-__EQF:	; A = B
-		call __FPSTACK_PUSH2
-
-		; ------------- ROM NOS-EQL
-		ld b, 0Eh	; For comparison operators, OP must be in B also
-		rst 28h
-		defb 0Eh
-		defb 38h;   ; END CALC
-
-		call __FPSTACK_POP
-		jp __FTOU8 ; Convert to 8 bits
-
-#line 1748 "RegisterManager.zxbas"
-
-
-
+#line 1638 "RegisterManager.zxbas"
 
 #line 1 "loadstr.asm"
 
@@ -3994,55 +3714,9 @@ __LOADSTR:		; __FASTCALL__ entry
 			ldir	; Copies string (length number included)
 			pop hl	; Recovers destiny in hl as result
 			ret
-#line 1753 "RegisterManager.zxbas"
+#line 1640 "RegisterManager.zxbas"
 
 
-#line 1 "ploadf.asm"
-
-	; Parameter / Local var load
-	; A => Offset
-	; IX = Stack Frame
-; RESULT: HL => IX + DE
-
-#line 1 "iloadf.asm"
-
-	; __FASTCALL__ routine which
-	; loads a 40 bits floating point into A ED CB
-	; stored at position pointed by POINTER HL
-	;A DE, BC <-- ((HL))
-
-__ILOADF:
-	    ld a, (hl)
-	    inc hl
-	    ld h, (hl)
-	    ld l, a
-
-	; __FASTCALL__ routine which
-	; loads a 40 bits floating point into A ED CB
-	; stored at position pointed by POINTER HL
-	;A DE, BC <-- (HL)
-
-__LOADF:    ; Loads a 40 bits FP number from address pointed by HL
-		ld a, (hl)
-		inc hl
-		ld e, (hl)
-		inc hl
-		ld d, (hl)
-		inc hl
-		ld c, (hl)
-		inc hl
-		ld b, (hl)
-		ret
-
-#line 7 "ploadf.asm"
-
-__PLOADF:
-	    push ix
-	    pop hl
-	    add hl, de
-	    jp __LOADF
-
-#line 1756 "RegisterManager.zxbas"
 
 #line 1 "print_eol_attr.asm"
 
@@ -4055,7 +3729,7 @@ __PLOADF:
 PRINT_EOL_ATTR:
 		call PRINT_EOL
 		jp COPY_ATTR
-#line 1758 "RegisterManager.zxbas"
+#line 1644 "RegisterManager.zxbas"
 #line 1 "printstr.asm"
 
 
@@ -4114,7 +3788,7 @@ __PRINT_STR:
 
 			ENDP
 
-#line 1759 "RegisterManager.zxbas"
+#line 1645 "RegisterManager.zxbas"
 #line 1 "printu32.asm"
 
 #line 1 "printi32.asm"
@@ -4347,7 +4021,7 @@ __PRINTU_LOOP:
 
 #line 2 "printu32.asm"
 
-#line 1760 "RegisterManager.zxbas"
+#line 1646 "RegisterManager.zxbas"
 #line 1 "printu8.asm"
 
 #line 1 "printi8.asm"
@@ -4481,7 +4155,7 @@ __PRINTU_LOOP:
 
 #line 2 "printu8.asm"
 
-#line 1761 "RegisterManager.zxbas"
+#line 1647 "RegisterManager.zxbas"
 #line 1 "pstore32.asm"
 
 #line 1 "store32.asm"
@@ -4519,7 +4193,7 @@ __PSTORE32:
 			add hl, bc
 			pop bc
 			jp __STORE32
-#line 1762 "RegisterManager.zxbas"
+#line 1648 "RegisterManager.zxbas"
 #line 1 "pstorestr.asm"
 
 ; vim:ts=4:et:sw=4
@@ -4840,7 +4514,7 @@ __PSTORE_STR:
 	    add hl, bc
 	    jp __STORE_STR
 
-#line 1763 "RegisterManager.zxbas"
+#line 1649 "RegisterManager.zxbas"
 #line 1 "pstorestr2.asm"
 
 ; vim:ts=4:et:sw=4
@@ -4899,7 +4573,7 @@ __PSTORE_STR2:
 	    add hl, bc
 	    jp __STORE_STR2
 
-#line 1764 "RegisterManager.zxbas"
+#line 1650 "RegisterManager.zxbas"
 #line 1 "shl32.asm"
 
 
@@ -4911,7 +4585,7 @@ __SHL32: ; Left Logical Shift 32 bits
 		rl d
 	    ret
 
-#line 1765 "RegisterManager.zxbas"
+#line 1651 "RegisterManager.zxbas"
 #line 1 "shrl32.asm"
 
 
@@ -4923,7 +4597,7 @@ __SHRL32: ; Right Logical Shift 32 bits
 	    rr l
 	    ret
 
-#line 1766 "RegisterManager.zxbas"
+#line 1652 "RegisterManager.zxbas"
 
 
 #line 1 "strcat.asm"
@@ -5072,7 +4746,7 @@ __STRCATEND:
 
 			ENDP
 
-#line 1769 "RegisterManager.zxbas"
+#line 1655 "RegisterManager.zxbas"
 #line 1 "string.asm"
 
 	; String library
@@ -5301,7 +4975,7 @@ __FREE_END:
 
 			ENDP
 
-#line 1770 "RegisterManager.zxbas"
+#line 1656 "RegisterManager.zxbas"
 
 #line 1 "strslice.asm"
 
@@ -5411,11 +5085,58 @@ __FREE_ON_EXIT:
 
 		ENDP
 
-#line 1772 "RegisterManager.zxbas"
+#line 1658 "RegisterManager.zxbas"
 #line 1 "val.asm"
 
 
+#line 1 "stackf.asm"
 
+	; -------------------------------------------------------------
+	; Functions to manage FP-Stack of the ZX Spectrum ROM CALC
+	; -------------------------------------------------------------
+
+
+	__FPSTACK_PUSH EQU 2AB6h	; Stores an FP number into the ROM FP stack (A, ED CB)
+	__FPSTACK_POP  EQU 2BF1h	; Pops an FP number out of the ROM FP stack (A, ED CB)
+
+__FPSTACK_PUSH2: ; Pushes Current A ED CB registers and top of the stack on (SP + 4)
+	                 ; Second argument to push into the stack calculator is popped out of the stack
+	                 ; Since the caller routine also receives the parameters into the top of the stack
+	                 ; four bytes must be removed from SP before pop them out
+
+	    call __FPSTACK_PUSH ; Pushes A ED CB into the FP-STACK
+	    exx
+	    pop hl       ; Caller-Caller return addr
+	    exx
+	    pop hl       ; Caller return addr
+
+	    pop af
+	    pop de
+	    pop bc
+
+	    push hl      ; Caller return addr
+	    exx
+	    push hl      ; Caller-Caller return addr
+	    exx
+
+	    jp __FPSTACK_PUSH
+
+
+__FPSTACK_I16:	; Pushes 16 bits integer in HL into the FP ROM STACK
+					; This format is specified in the ZX 48K Manual
+					; You can push a 16 bit signed integer as
+					; 0 SS LL HH 0, being SS the sign and LL HH the low
+					; and High byte respectively
+		ld a, h
+		rla			; sign to Carry
+		sbc	a, a	; 0 if positive, FF if negative
+		ld e, a
+		ld d, l
+		ld c, h
+		xor a
+		ld b, a
+		jp __FPSTACK_PUSH
+#line 3 "val.asm"
 
 
 VAL: ; Computes VAL(a$) using ROM FP-CALC
@@ -5533,7 +5254,7 @@ __RET_ZERO:	; Returns 0 Floating point on error
 
 		ENDP
 
-#line 1773 "RegisterManager.zxbas"
+#line 1659 "RegisterManager.zxbas"
 
 ZXBASIC_USER_DATA:
 	_input_LastK EQU 23560

@@ -71,7 +71,6 @@
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="ZXSerialLoader.cs" />
     <EmbeddedResource Include="SerialSelector.resx">
       <DependentUpon>SerialSelector.cs</DependentUpon>
     </EmbeddedResource>
@@ -106,6 +105,12 @@
     <Content Include="tape.gif" />
     <Content Include="tape3.gif" />
     <Content Include="tapeplayer.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ZXSerialLoaderLibrary\ZXSerialLoaderLibrary.csproj">
+      <Project>{D0C2A8D3-4CAB-40B5-A9DD-0F2205F726D8}</Project>
+      <Name>ZXSerialLoaderLibrary</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

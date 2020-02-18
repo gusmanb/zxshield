@@ -6,19 +6,17 @@ dim regRead as ubyte
 dim regWrite as ubyte
 dim regLen as uByte
 
-function screenCleanup()
-
-cls
-print at 0,10;paper 1; ink 7; flash 1; "ZX REGISTERS"
-print " "
-
-end function
-
 rem *******************Funciones**********************
 
-rem Selección de registro
+sub screenCleanup()
 
-function selectRegister()
+	cls
+	print at 0,10;paper 1; ink 7; flash 1; "ZX REGISTERS"
+	print " "
+
+end sub
+
+sub selectRegister()
 
 	dim sReg as string
 	dim iReg as uinteger
@@ -28,13 +26,13 @@ regSelLoop:
 
 	print " "
 
-	print "Seleccione registro (0-255)"
+	print "Select register (0-255)"
 
 	sReg = input(3)
 	iReg = val(sReg)
 
 	if iReg > 255 then
-		print "Registro incorrecto"
+		print "Wrong register"
 		goto regSelLoop
 	end if
 
@@ -42,7 +40,7 @@ regSelLoop:
 
 	print ""
 
-	print "Registro seleccionado: "; register
+	print "Selected register: "; register
 
 	out 241, register
 
@@ -52,39 +50,39 @@ regSelLoop:
 	regRead = bReg bAnd 4
 	regWrite = bReg bAnd 8
 
-	print "Config recibida: "; bReg
+	print "Received config: "; bReg
 
 	if regType = 0 then
-		print "Tipo de registro: byte"
+		print "Register type: byte"
 	elseif regType = 1 then
-		print "Tipo de registro: integer"
+		print "Register type: integer"
 	elseif regType = 2
-		print "Tipo de registro: stream"
+		print "Register type: stream"
 	else
-		print "Tipo de registro desconocido!"
+		print "Unknown register type!"
 	end if
 
 	if regRead then
-		print "Lectura permitida"
+		print "Read allowed"
 	else
-		print "Lectura no permitida"
+		print "Read disallowed"
 	end if
 
 	if regWrite then
-		print "Escritura permitida"
+		print "Write allowed"
 	else
-		print "Escritura no permitida"
+		print "Write disallowed"
 	end if
+
+	dim reglen as byte
 
 	do
 		regLen = in 243
     loop while reglen = 250
 
-	print "Longitud del registro: "; regLen
+	print "Register length: "; regLen
 
-end function
-
-rem Función de selección de operación
+end sub
 
 function selectOperation() as string
 
@@ -93,17 +91,17 @@ function selectOperation() as string
 selectOpAgain:
 
 	print " "
-	print "Seleccione operacion:"
+	print "Choose operation:"
 	print ""
-	print "    (a)ctivar registro"
-	print "    (l)eer registro"
-	print "    (e)scribir registro"
-	print "    (s)alir"
+	print "    (e)nable register"
+	print "    (r)ead register"
+	print "    (w)rite register"
+	print "    (l)eave"
 
 	st = input(1)
 
-	if st <> "a" and st <> "l" and st <> "e" and st <> "s"
-		print "Opertacion incorrecta"
+	if st <> "e" and st <> "r" and st <> "w" and st <> "l"
+		print "Incorrect operation"
 		goto selectOpAgain
 	end if
 
@@ -111,19 +109,17 @@ selectOpAgain:
 
 end function
 
-rem Función de lectura de registri
-
-function readRegister()
+sub readRegister()
 
 	print " "
 
 	if not regRead then
-		print "Registro no legible"
-		return 0
+		print "Not readable"
+		return
 	end if
 
 	if regType = 0 then
-		print "Valor byte: "; in 245
+		print "Byte value: "; in 245
 	elseif regType = 1 then
 		
 		dim iVal as ulong
@@ -137,11 +133,11 @@ function readRegister()
         tVal = in 245
 		iVal = iVal bOr tVal
 
-		print "Valor integer: "; iVal
+		print "Integer value: "; iVal
 
 	else if regType = 2 then
 		
-		print "Leyendo stream..."
+		print "Reading stream..."
 
 		dim buf as string
 		dim rl as uinteger
@@ -149,31 +145,31 @@ function readRegister()
 			buf = buf + chr$(in 245)
 		next rl
 
-		print "Valor stream:"
+		print "Stream value:"
 		print buf
 
 	else
-		print "Tipo de registro desconocido!"
+		print "Unknown register type!"
 	end if
 
-end function
+end sub
 
-function writeRegister()
+sub writeRegister()
 
 	print " "
 
 	if not regWrite then
-		print "Registro no escribible"
-		return 0
+		print "Not writeable"
+		return
 	end if
 
 	if regType = 0 then
-		print "Valor?"
+		print "Value?"
 		dim bVal as ubyte
 		bVal = val(input(3))
 		out 245, bVal
 	elseif regType = 1 then
-		print "Valor?"
+		print "Value?"
 		dim iVal as ulong
 		iVal = val(input(10))
 		out 245, (iVal >> 24) bAnd 255
@@ -181,13 +177,13 @@ function writeRegister()
 		out 245, (iVal >> 8) bAnd 255
 		out 245, iVal bAnd 255
 	else if regType = 2 then
-		print "Valor?"
+		print "Value?"
 		dim sVal as string
 		sVal = input(64)
 		dim sLen as ubyte
 		sLen = len sVal
 
-		print "Enviando stream de "; sLen; " bytes..."
+		print "Sending "; sLen; " bytes stream..."
 
 		out 243, sLen
 
@@ -196,13 +192,13 @@ function writeRegister()
 			out 245, code sVal(wl to wl)
 		next wl
 
-		print "Stream enviado"
+		print "Stream sent"
 
 	else
-		print "Tipo de registro desconocido!"
+		print "Unknown register type!"
 	end if
 
-end function
+end sub
 
 
 rem *******************PROGRAMA**********************
@@ -211,17 +207,19 @@ screenCleanup()
 
 selectRegister()
 
+dim op as string
+
 do
 
 op = selectOperation()
 
 screenCleanup()
 
-if op = "a" then
+if op = "e" then
 	selectRegister()
-elseif op = "l" then
+elseif op = "r" then
 	readRegister()
-elseif op = "e" then
+elseif op = "w" then
 	writeRegister()
 else
 	print "Bye!"
