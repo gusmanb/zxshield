@@ -118,7 +118,7 @@ namespace ZXDesktopLoader
             programLbl.Visible = true;
             cassetteGif.Play();
 
-            var result = await Task.Run(() => loader.DumpFile(serial, file, 1024, null));
+            var result = await Task.Run(() => loader.DumpFile(serial, file, 128, null));
 
             cassetteGif.Stop();
             programLbl.Visible = false;

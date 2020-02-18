@@ -12,6 +12,10 @@ namespace ZXDesktopLoader
 {
     public class ZXSerialLoader
     {
+
+
+        const int serialSpeed = 1000000;
+
         public enum ZXSerialLoaderResult
         {
             Success = 0,
@@ -50,7 +54,7 @@ namespace ZXDesktopLoader
             {
                 string dvResponse;
 
-                using (SerialPort serial = new SerialPort(SerialPort, 115200, Parity.None, 8, StopBits.One))
+                using (SerialPort serial = new SerialPort(SerialPort, serialSpeed, Parity.None, 8, StopBits.One))
                 {
                     serial.Open();
 
@@ -149,12 +153,12 @@ namespace ZXDesktopLoader
                 {
                     string dvResponse;
 
-                    using (SerialPort serial = new SerialPort(SerialPort, 115200, Parity.None, 8, StopBits.One))
+                    using (SerialPort serial = new SerialPort(SerialPort, serialSpeed, Parity.None, 8, StopBits.One))
                     {
                         serial.Open();
 
-                        //serial.ReadTimeout = 5000;
-                        //serial.WriteTimeout = 5000;
+                        serial.ReadTimeout = 5000;
+                        serial.WriteTimeout = 5000;
 
                         serial.Write("D");
 
@@ -220,15 +224,9 @@ namespace ZXDesktopLoader
                             pos += segLen;
                         }
 
-                        //pos -= segLen;
-
                         if (Progress != null)
                             Progress(1000);
-
-                        //while (serial.BytesToRead < segLen) ;
-
-                        //serial.Read(RAMBuffer, pos, segLen);
-
+                        
                         if ((dvResponse = serial.ReadLine()) != "HEADER")
                             return ZXSerialLoaderResult.UnknownResponse;
 

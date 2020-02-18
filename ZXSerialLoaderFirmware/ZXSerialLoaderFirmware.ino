@@ -41,7 +41,7 @@ void setup()
 	ZXShield::ResetCPU();
 
 	//Initialize serial port
-	Serial.begin(115200);
+	Serial.begin(1000000);
 
 	//Clear any trash on the buffer
 	byte tmp;
