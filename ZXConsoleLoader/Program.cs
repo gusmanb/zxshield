@@ -31,7 +31,7 @@ namespace ZXSerialLoaderClient
 
             ZXSerialLoader loader = new ZXSerialLoader();
 
-            var result = await Task.Run(() => loader.LoadFile(args[0], args[1], 2048, new Action<int>((progress) =>
+            var result = await Task.Run(() => loader.LoadFile(args[0], args[1], 128, new Action<int>((progress) =>
             {
                 Console.CursorLeft = x;
                 Console.CursorTop = y;

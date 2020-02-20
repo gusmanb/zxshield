@@ -121,11 +121,11 @@ namespace ZXSerialLoaderLibrary
                     if (Progress != null)
                         Progress(1000);
                     
-                    serial.ReadLine();
+                    Console.WriteLine(serial.ReadLine());
                     if (Progress != null)
                         Progress(2000);
-                    
-                    serial.ReadLine();
+
+                    Console.WriteLine(serial.ReadLine());
                     if (Progress != null)
                         Progress(3000);
 

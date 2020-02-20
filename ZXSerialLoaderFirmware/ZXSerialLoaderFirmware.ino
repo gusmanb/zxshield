@@ -475,6 +475,7 @@ void RAMHandler(word Address, byte Operation)
 		}
 
 		ZXShield::OutputROMByte(virtualRAM[Address]); //send data
+
 	}
 }
 

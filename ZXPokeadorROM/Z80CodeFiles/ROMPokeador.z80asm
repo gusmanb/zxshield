@@ -1,0 +1,198 @@
+﻿MENU_LINE .equ 22
+INPUT_LINE .equ 23
+
+
+; Code file
+start: .org #0000
+
+regSP:
+.dw #0000
+IFFStatus:
+.db #00
+
+.org #0065
+tempStack:                  ;temporal stack stored in the Arduino
+
+NMIHandler:                 ;the NMI handler, main entry point
+.org #0066
+
+JP beginPokeador            ;Jump all includes
+
+;---------------------------------Includes
+
+#include "Charset.z80asm"
+#include "CustomFunctions.z80asm"
+#include "Output.z80asm"
+#include "Keyboard.z80asm"
+#include "Messages.z80asm"
+#include "RAMVars.z80asm"
+
+beginPokeador:
+
+;---------------------------------Save state
+
+; We set a temporary stack on the Arduino.
+
+LD (regSP), SP              ;save old stack address
+LD SP, tempStack            ;Change to the temporal stack
+
+;Push on the temporary stack all the registers
+PUSH AF
+PUSH BC
+PUSH DE
+PUSH HL
+
+LD A, I                     ;Load I to check the IFF status
+PUSH AF
+POP BC
+
+LD A, C                     ;Store only bit2
+AND 4
+
+LD (IFFStatus), A           ;Store IFF status
+
+;---------------------------------State saved, main program begins
+
+LD A, MENU_LINE
+LD HL, LineBuffer1
+CALL DumpLine
+
+LD A, INPUT_LINE
+LD HL, LineBuffer2
+CALL DumpLine
+
+mainMenu:
+
+LD HL, Menu
+CALL InputNumber
+LD A, H
+CP 0
+JP NZ, errorValor
+
+LD A, L
+CP 1
+JP Z, pokear
+CP 2
+JP Z, buscar
+CP 3
+JP Z, salir
+
+errorValor:
+LD HL, Error
+CALL InputNumber
+JP mainMenu
+
+pokear:
+
+LD HL, Direccion
+CALL InputNumber
+LD A, H
+ADD A, L
+JP C, okValor
+JP Z, errorValor
+
+okValor:
+PUSH HL
+
+LD HL, Valor
+CALL InputNumber
+
+PUSH HL
+POP BC
+POP HL
+LD (HL), C
+
+LD HL, Correcto
+CALL InputNumber
+JP mainMenu
+
+buscar:
+
+
+LD HL, Direccion
+CALL InputNumber
+LD A, H
+ADD A, L
+JP C, okDir
+JP Z, errorValor
+
+okDir:
+PUSH HL
+
+LD HL, Valor
+CALL InputNumber
+
+PUSH HL
+POP BC
+POP HL
+
+PUSH HL
+PUSH BC
+
+LD HL, Buscando
+CALL Print_String
+
+POP BC
+POP HL
+
+;HL is now the start address, C the value to search
+
+searchLoop:
+
+LD A, (HL)
+CP C
+
+JP Z, encontrado
+
+INC HL
+LD A, H
+CP 0
+JP NZ, searchLoop
+LD A, L
+CP 0
+JP NZ, searchLoop
+
+LD HL, NoEncuentra
+CALL InputNumber
+
+JP mainMenu
+
+encontrado:
+
+LD DE, DirEncontrada
+CALL NumberToString
+LD HL, Encuentra
+CALL InputNumber
+
+JP mainMenu
+
+salir:
+
+LD A, MENU_LINE
+LD HL, LineBuffer1
+CALL RestoreLine
+
+LD A, INPUT_LINE
+LD HL, LineBuffer2
+CALL RestoreLine
+
+;---------------------------------Main program ends, restore state
+
+POP HL                      ;restore registers
+POP DE
+POP BC
+
+LD A, (IFFStatus)           ;Restore interrupt status
+
+CP 4
+JP NZ, noInterrupts
+EI
+
+noInterrupts:
+
+POP AF                      ;restore AF
+LD SP, (regSP)              ;restore stack
+
+;---------------------------------State restored
+
+RETN                        ;exit NIM

@@ -1,0 +1,35 @@
+﻿Menu:
+.defb 0
+.defb MENU_LINE
+.defm "Accion? 1-Poke 2-Buscar 3-Salir\xFF"
+Direccion:
+.defb 0
+.defb MENU_LINE
+.defm "Direccion?\xFF"
+Valor:
+.defb 0
+.defb MENU_LINE
+.defm "Valor?\xFF"
+Correcto:
+.defb 0
+.defb MENU_LINE
+.defm "Correcto, pulsa intro.\xFF"
+Error:
+.defb 0
+.defb MENU_LINE
+.defm "Error, pulsa intro.\xFF"
+Buscando:
+.defb 0
+.defb MENU_LINE
+.defm "Buscando el valor...   \xFF"
+NoEncuentra:
+.defb 0
+.defb MENU_LINE
+.defm "No encontrado, pulsa intro.\xFF"
+
+Encuentra:
+.defb 0
+.defb MENU_LINE
+.defm "Encontrado:"
+DirEncontrada:
+.defm "00000\xFF"

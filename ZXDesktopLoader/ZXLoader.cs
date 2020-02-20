@@ -49,7 +49,7 @@ namespace ZXDesktopLoader
                         programLbl.Visible = true;
                         cassetteGif.Play();
 
-                        var result = await Task.Run(() => loader.LoadFile(serial, files[0], 2048, null));
+                        var result = await Task.Run(() => loader.LoadFile(serial, files[0], 512, null));
 
                         cassetteGif.Stop();
                         programLbl.Visible = false;

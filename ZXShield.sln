@@ -47,6 +47,12 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Telnet", "Telnet", "{F2E067
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Support libraries", "Support libraries", "{CC858B4C-7E91-49D2-B368-7CF22CA51544}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ZXPokeadorFirmware", "ZXPokeadorFirmware\ZXPokeadorFirmware.vcxproj", "{AC372084-4F0B-479D-A41A-559EF6343765}"
+EndProject
+Project("{F16D4249-6279-474E-8826-742E7FF7445C}") = "ZXPokeadorROM", "ZXPokeadorROM\ZXPokeadorROM.z80cdproj", "{13FB7E01-7294-4C83-92D8-D8782E8491C7}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Pokeador", "Pokeador", "{D5CEB9CD-BF73-41CA-867F-CCD52BFBA688}"
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		ZXShield\ZXShield.vcxitems*{1950f67d-a659-447c-aba3-2a29d88703e8}*SharedItemsImports = 9
@@ -55,6 +61,7 @@ Global
 		ZXShield\ZXShield.vcxitems*{4f4d454d-25bf-4663-9aee-e180d05559da}*SharedItemsImports = 4
 		Devices\Devices.vcxitems*{7bc89c1e-aa1e-4124-940b-f82e682df3e9}*SharedItemsImports = 4
 		ZXShield\ZXShield.vcxitems*{7bc89c1e-aa1e-4124-940b-f82e682df3e9}*SharedItemsImports = 4
+		ZXShield\ZXShield.vcxitems*{ac372084-4f0b-479d-a41a-559ef6343765}*SharedItemsImports = 4
 		ZXShield\ZXShield.vcxitems*{c5f80730-f44f-4478-bdae-6634efc2ca88}*SharedItemsImports = 4
 		Devices\Devices.vcxitems*{f17c190d-3faa-47f0-9ed2-524dde73d377}*SharedItemsImports = 9
 	EndGlobalSection
@@ -135,6 +142,12 @@ Global
 		{CB61848F-9EC1-40C3-B0BB-6F7B66A877FA}.Release|Any CPU.Build.0 = Release|Any CPU
 		{CB61848F-9EC1-40C3-B0BB-6F7B66A877FA}.Release|x86.ActiveCfg = Release|Any CPU
 		{CB61848F-9EC1-40C3-B0BB-6F7B66A877FA}.Release|x86.Build.0 = Release|Any CPU
+		{AC372084-4F0B-479D-A41A-559EF6343765}.Debug|Any CPU.ActiveCfg = Debug|Win32
+		{AC372084-4F0B-479D-A41A-559EF6343765}.Debug|x86.ActiveCfg = Debug|Win32
+		{AC372084-4F0B-479D-A41A-559EF6343765}.Debug|x86.Build.0 = Debug|Win32
+		{AC372084-4F0B-479D-A41A-559EF6343765}.Release|Any CPU.ActiveCfg = Release|Win32
+		{AC372084-4F0B-479D-A41A-559EF6343765}.Release|x86.ActiveCfg = Release|Win32
+		{AC372084-4F0B-479D-A41A-559EF6343765}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -154,6 +167,8 @@ Global
 		{AF2125B8-2630-463E-87C1-E62242C0C0DE} = {EE68E536-3552-45FC-8B20-4CBB3AF038B1}
 		{D0C2A8D3-4CAB-40B5-A9DD-0F2205F726D8} = {EE68E536-3552-45FC-8B20-4CBB3AF038B1}
 		{CB61848F-9EC1-40C3-B0BB-6F7B66A877FA} = {EE68E536-3552-45FC-8B20-4CBB3AF038B1}
+		{AC372084-4F0B-479D-A41A-559EF6343765} = {D5CEB9CD-BF73-41CA-867F-CCD52BFBA688}
+		{13FB7E01-7294-4C83-92D8-D8782E8491C7} = {D5CEB9CD-BF73-41CA-867F-CCD52BFBA688}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {10AA5C22-F01B-4636-97B1-539E55193419}

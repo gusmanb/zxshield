@@ -1,0 +1,3 @@
+﻿{
+  "postExport": "C:\\Users\\geniw\\source\\repos\\ZXShield\\GeneraROMRAM\\bin\\Debug\\GeneraROMRAM.exe $(ExportPath) C:\\Users\\geniw\\source\\repos\\ZXShield\\GeneraROMRAM\\bin\\Debug\\$(ExportFile).h POKE"
+}
