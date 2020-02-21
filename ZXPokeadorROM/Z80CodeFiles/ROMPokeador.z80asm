@@ -9,6 +9,9 @@ regSP:
 .dw #0000
 IFFStatus:
 .db #00
+regSPLoad:
+.dw #0000
+
 
 .org #0065
 tempStack:                  ;temporal stack stored in the Arduino
@@ -41,6 +44,8 @@ PUSH AF
 PUSH BC
 PUSH DE
 PUSH HL
+
+LD (regSPLoad), SP
 
 LD A, I                     ;Load I to check the IFF status
 PUSH AF
@@ -159,10 +164,24 @@ JP mainMenu
 
 encontrado:
 
+PUSH BC
+PUSH HL
+
+
 LD DE, DirEncontrada
 CALL NumberToString
 LD HL, Encuentra
 CALL InputNumber
+
+PUSH HL
+POP BC
+POP HL
+INC HL
+LD A, C
+CP 1
+POP BC
+
+JP Z, searchLoop
 
 JP mainMenu
 
@@ -177,6 +196,8 @@ LD HL, LineBuffer2
 CALL RestoreLine
 
 ;---------------------------------Main program ends, restore state
+
+LD SP, (regSPLoad)       ;Ensure there is nothing else but our registers
 
 POP HL                      ;restore registers
 POP DE

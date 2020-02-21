@@ -89,6 +89,7 @@ POP HL
 
 ;HL is now the start address, C the value to search
 
+
 searchLoop:
 
 LD A, (HL)
@@ -111,10 +112,25 @@ JP mainMenu
 
 encontrado:
 
+PUSH BC
+PUSH HL
+
+
 LD DE, DirEncontrada
 CALL NumberToString
 LD HL, Encuentra
 CALL InputNumber
+
+PUSH HL
+POP BC
+POP HL
+
+INC HL
+LD A, C
+
+CP 1
+POP BC
+JP Z, searchLoop
 
 JP mainMenu
 
@@ -127,6 +143,7 @@ CALL RestoreLine
 LD A, INPUT_LINE
 LD HL, LineBuffer2
 CALL RestoreLine
+
 
 RET
 

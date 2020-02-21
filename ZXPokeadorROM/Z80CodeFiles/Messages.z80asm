@@ -32,4 +32,4 @@ Encuentra:
 .defb MENU_LINE
 .defm "Encontrado:"
 DirEncontrada:
-.defm "00000\xFF"
+.defm "00000, 0=S 1=C\xFF"

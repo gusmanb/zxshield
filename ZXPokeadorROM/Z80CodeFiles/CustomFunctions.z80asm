@@ -452,10 +452,10 @@ NumberToString:
 	ld	c,-10
 	call	Num1
 	ld	c,-1
-	call Num1
-	LD A, 0xFF
-	LD (DE), A
-	ret
+	;call Num1
+	;LD A, 0xFF
+	;LD (DE), A
+	;ret
 Num1:	
 	ld	a,'0'-1
 Num2:	
