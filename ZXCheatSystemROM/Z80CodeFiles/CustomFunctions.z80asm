@@ -1,0 +1,468 @@
+﻿;Purpose: copy one line of screen to a secondary buffer
+;A must hold the line number, HL the buffer address
+;Each stored line occupies 288 bytes
+
+DumpLine:
+
+PUSH AF                  ;Store value of A
+PUSH HL                  ;store target address
+PUSH AF                  ;Store value of A
+
+
+RLA                      ;Rotate 5 times, we're calculating the low byte of the row address
+RLA
+RLA
+RLA
+RLA
+
+AND %11100000            ;Preserve only bits 7,6,5
+LD L, A                  ;Store LSB in L
+
+POP AF                   ;Restore A
+
+AND %00011000            ;Preserve bits 3,4
+OR  %01000000            ;Set 7,6,5 to 010, start of the screen file
+LD H, A                  ;Store MSB on H
+
+POP DE                   ;load in DE target destination
+
+PUSH HL                  ;Store the address
+
+LD A, 0                  ;Load A with the pixel row 0
+
+loopDump:
+
+POP HL                   ;load in HL start of the line
+
+PUSH HL                  ;store again for later use
+PUSH AF                  ;store A for later restore
+OR H                     ;add the current pixel row
+LD H, A                  ;place it on H
+
+POP AF                   ;restore A
+
+LD BC, 32                ;load BC with 31 (32 columns, we already cleared the first one)
+LDIR                     ;Clear line by copying the byte 32 times
+
+INC A                    ;Move to next line
+CP 8                     ;Are we on line 8?
+JP NZ, loopDump              ;No, goto loop
+
+;Now, copy the attributes
+POP HL                   ;rest
+POP AF
+
+LD H, 0
+LD L, A         ;Load DE with 0x00(AA)
+
+OR A            ;clear carry flag
+
+RL L            ;Multiply by 32 by left shifthing 5 times
+RL H
+
+RL L
+RL H
+
+RL L
+RL H
+
+RL L
+RL H
+
+RL L
+RL H
+
+LD BC, #5800    ;Now add the attribute file absolute address
+ADD HL, BC
+
+LD BC, 32       ;set 32 bytes to copy
+
+LDIR            ;Do it!
+
+RET
+
+
+
+
+
+
+
+
+;Purpose: restore one line of screen from a secondary buffer
+;A must hold the line number, HL the buffer address
+;Each stored line occupies 288 bytes
+
+RestoreLine:
+
+PUSH AF                  ;Store value of A
+PUSH HL                  ;store target address
+PUSH AF                  ;Store value of A
+
+
+RLA                      ;Rotate 5 times, we're calculating the low byte of the row address
+RLA
+RLA
+RLA
+RLA
+
+AND %11100000            ;Preserve only bits 7,6,5
+LD E, A                  ;Store LSB in E
+
+POP AF                   ;Restore A
+
+AND %00011000            ;Preserve bits 3,4
+OR  %01000000            ;Set 7,6,5 to 010, start of the screen file
+LD D, A                  ;Store MSB on H
+
+POP HL                   ;load in DE target destination
+
+PUSH DE                  ;Store the address
+
+LD A, 0                  ;Load A with the pixel row 0
+
+loopRestore:
+
+POP DE                   ;load in HL start of the line
+
+PUSH DE                  ;store again for later use
+PUSH AF                  ;store A for later restore
+OR D                     ;add the current pixel row
+LD D, A                  ;place it on H
+
+POP AF                   ;restore A
+
+LD BC, 32                ;load BC with 31 (32 columns, we already cleared the first one)
+LDIR                     ;Clear line by copying the byte 32 times
+
+INC A                    ;Move to next line
+CP 8                     ;Are we on line 8?
+JP NZ, loopRestore       ;No, goto loop
+
+;Now, copy the attributes
+POP DE                   ;rest
+POP AF
+
+LD D, 0
+LD E, A         ;Load DE with 0x00(AA)
+
+OR A            ;clear carry flag
+
+RL E            ;Multiply by 32 by left shifthing 5 times
+RL D
+
+RL E
+RL D
+
+RL E
+RL D
+
+RL E
+RL D
+
+RL E
+RL D
+
+PUSH HL         ;preserve buffer addres
+PUSH DE         ;Load in HL the attribute address
+POP HL
+
+LD BC, #5800    ;Now add the attribute file absolute address
+ADD HL, BC  
+PUSH HL         ;load absolute destination to DE
+POP DE
+   
+POP HL          ;restore buffer address
+
+LD BC, 32       ;set 32 bytes to copy
+
+LDIR            ;Do it!
+
+RET
+
+
+;Purpose: clear one line of pixels
+;A must hold the line number
+
+ClearLine:
+
+PUSH AF                  ;Store value of A
+
+RLA                      ;Rotate 5 times, we're calculating the low byte of the row address
+RLA
+RLA
+RLA
+RLA
+
+AND %11100000            ;Preserve only bits 7,6,5
+LD L, A                  ;Store LSB in L
+
+POP AF                   ;Restore A
+
+AND %00011000            ;Preserve bits 3,4
+OR  %01000000            ;Set 7,6,5 to 010, start of the screen file
+LD H, A                  ;Store MSB on H
+
+PUSH HL                  ;Store the address
+
+LD A, 0                  ;Load A with the pixel row 0
+
+loopClear:
+
+POP DE                   ;load in DE start of the line
+PUSH DE                  ;store again for later use
+PUSH AF                  ;store A for later restore
+OR D                     ;add the current pixel row
+LD D, A                  ;place it on H
+PUSH DE                  ;copy the address to DE
+POP HL
+POP AF                   ;restore A
+
+LD (HL), 0x00            ;clear first column on the row
+
+INC E                    ;Move to the next column
+LD BC, 31                ;load BC with 31 (32 columns, we already cleared the first one)
+LDIR                     ;Clear line by copying the byte 32 times
+
+INC A                    ;Move to next line
+CP 8                     ;Are we on line 8?
+JP NZ, loopClear              ;No, goto loop
+
+POP DE                   ;clear stack
+
+RET                      ;return to caller
+
+
+;Purpose: set a text line colors
+;A holds the line, B holds the paper, C holds the ink
+SetLineColors:
+
+;First, calculate the start byte on the attribute file (multiply line per 32)
+
+LD H, 0
+LD L, A         ;Load DE with 0x00(AA)
+
+OR A            ;clear carry flag
+
+RL L            ;Multiply by 32 by left shifthing 5 times
+RL H
+
+RL L
+RL H
+
+RL L
+RL H
+
+RL L
+RL H
+
+RL L
+RL H
+
+LD DE, #5800 ;Now add the attribute file absolute address
+ADD HL, DE
+
+PUSH HL      ;Store in DE and HL the address
+POP DE
+
+;Compute the attribute value, assume flash 0 and bright 0
+
+OR A        ;Clear carry flag
+
+RL B        ;Shift paper 3 bits
+RL B
+RL B
+LD A, B     ;Combine with ink
+OR C
+AND %00111111 ;Clear flash and paper
+
+;Now A holds the attribute value
+
+LD (HL), A  ;Set first attribute on the line
+INC DE      ;increment DE by one
+LD BC, 31   ;Store 31 on BC to copy 31 bytes
+LDIR        ;Do it!
+
+RET
+
+;purpose: show a message and return a number
+;message address must be passed in HL, value will be return in HL
+
+InputNumber:
+
+PUSH HL
+
+LD HL, InputString
+LD A, 32
+
+clearLoop:
+LD (HL), ' '
+INC HL
+DEC A
+JP NZ, clearLoop
+
+
+LD A, MENU_LINE
+CALL ClearLine
+LD A, MENU_LINE
+LD B, 6
+LD C, 1
+CALL SetLineColors
+POP HL
+CALL Print_String
+
+LD A, INPUT_LINE
+CALL ClearLine
+LD A, INPUT_LINE
+LD B, 5
+LD C, 1
+CALL SetLineColors
+LD HL, InputString  ;store current char index
+PUSH HL
+
+updateInput:
+LD HL, Input
+CALL Print_String
+
+getPressKey:
+CALL Read_Keyboard  ;read keyboard
+OR 0                ;Check if something was pressed
+JP Z, getPressKey   ;no? try again then
+
+;Key pressed
+
+XOR '^'            ;Is it delete?
+JP Z, deleteChar
+XOR '^'
+
+XOR '%'           ;is it return?
+JP Z, endInput
+XOR '%'
+
+JP addChar         ;add the char
+
+
+deleteChar:
+
+POP HL              ;Are we at the beginning of the input buffer?
+PUSH HL
+
+LD BC, InputString
+OR A
+SBC HL, BC
+
+JP Z, waitLoop      ;yes, ignore delete
+
+POP HL
+DEC HL
+LD (HL), ' '
+PUSH HL
+
+JP waitLoop
+
+endInput:
+
+POP HL
+LD (HL), 0xFF
+
+finalWaitLoop:          ;wait for key release
+CALL Read_Keyboard      ;read keyboard
+OR 0                    ;Check if something was pressed
+JP NZ, finalWaitLoop    ;Yes? loop again then
+
+JP getInputNumber
+
+addChar:
+
+POP HL
+LD (HL), A
+
+INC HL              ;Increase buffer position and store
+PUSH HL
+
+waitLoop:           ;wait for key release
+CALL Read_Keyboard  ;read keyboard
+OR 0                ;Check if something was pressed
+JP NZ, waitLoop     ;Yes? loop again then
+
+JP updateInput      ;Return
+
+
+getInputNumber:
+
+ld BC, InputString  ;load in BC the address of the buffer
+LD HL, 0            ;clear HL
+LD DE, 0            ;clear DE
+
+readLoop:
+
+LD A, (BC)          ;load the char
+CP 0xFF             ;check if it's the end of the string
+JP Z, exit          ;if it is, exit
+CP '0'              ;check against char 0
+JP Z, checkUpper    ;if it's zero, go to next check
+JP M, errorChar     ;if it's lower than 0 then this is not allowed
+checkUpper:
+CP '9'              ;check against char 9
+JP Z, sumChar       ;if it's 9 add the char
+JP P, errorChar     ;if it's greater than 9 then this is not allowed
+
+sumChar: 
+
+PUSH BC             ;multiply by 10 the previous result
+PUSH HL
+POP BC
+ADD HL, BC          
+ADD HL, BC
+ADD HL, BC
+ADD HL, BC
+ADD HL, BC
+ADD HL, BC
+ADD HL, BC
+ADD HL, BC
+ADD HL, BC
+
+SUB A, '0'          ;subtract char '0'
+LD E, A             ;load E with the result
+ADD HL, DE          ;add it to BC
+
+POP BC              ;next char
+INC BC
+
+JP readLoop         ;loop
+
+errorChar:
+
+LD HL, 0
+
+exit:
+
+RET
+
+;Purpose: convert the value in HL to an string
+;HL must contain the value, DE the destination buffer
+;Buffer will be terminated with 0xFF
+
+NumberToString:
+	ld	bc,-10000
+	call	Num1
+	ld	bc,-1000
+	call	Num1
+	ld	bc,-100
+	call	Num1
+	ld	c,-10
+	call	Num1
+	ld	c,-1
+	;call Num1
+	;LD A, 0xFF
+	;LD (DE), A
+	;ret
+Num1:	
+	ld	a,'0'-1
+Num2:	
+	inc	a
+	add	hl,bc
+	jr	c,Num2
+	sbc	hl,bc
+	LD (DE), A
+	INC DE
+	ret 

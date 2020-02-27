@@ -1,0 +1,18 @@
+﻿; Code file
+
+Input:
+.defb 0x00
+.defb INPUT_LINE
+InputString:
+.defm "                                "
+.defb 0xFF
+Number:
+.defb 0x00
+.defb INPUT_LINE
+NumberString:
+.defm "                                "
+.defb 0xFF
+LineBuffer1:
+.defs 288
+LineBuffer2:
+.defs 288

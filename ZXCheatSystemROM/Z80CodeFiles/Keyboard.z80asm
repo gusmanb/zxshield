@@ -1,0 +1,41 @@
+﻿;
+; Title:        ZX Spectrum Keyboard Routines
+; Author:       Dean Belfield
+; Created:      29/07/2011
+; Last Updated: 29/07/2011
+;
+; Requires:
+;
+; Modinfo:
+;
+ 
+; Read the keyboard and return an ASCII character code
+;
+Read_Keyboard:          LD HL,Keyboard_Map              ; Point HL at the keyboard list
+                        LD D,8                          ; This is the number of ports (rows) to check
+                        LD C,0xFE                       ; B is always FEh for reading keyboard ports
+Read_Keyboard_0:        LD B,(HL)                       ; Get the keyboard port address
+                        INC HL                          ; Increment to keyboard list of table
+                        IN A,(C)                        ; Read the row of keys in
+                        AND 0x1F                        ; We are only interested in the first five bits
+                        LD E,5                          ; This is the number of keys in the row
+Read_Keyboard_1:        SRL A                           ; Shift A right; bit 0 sets carry bit
+                        JR NC,Read_Keyboard_2           ; If the bit is 0, we've found our key
+                        INC HL                          ; Go to next table address
+                        DEC E                           ; Decrement key loop counter
+                        JR NZ,Read_Keyboard_1           ; Loop around until this row finished
+                        DEC D                           ; Decrement row loop counter
+                        JR NZ,Read_Keyboard_0           ; Loop around until we are done
+                        AND A                           ; Clear A (no key found)
+                        RET
+Read_Keyboard_2:        LD A,(HL)                       ; We've found a key at this point; fetch the character code!
+                        RET
+ 
+Keyboard_Map:           DM "\xFE^ZXCV"
+                        DM "\xFDASDFG"
+                        DM "\xFBQWERT"
+                        DM "\xF712345"
+                        DM "\xEF09876"
+                        DM "\xDFPOIUY"
+                        DM "\xBF%LKJH"
+                        DM "\x7F $MNB"

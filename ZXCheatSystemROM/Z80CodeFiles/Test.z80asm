@@ -1,0 +1,154 @@
+﻿; Code file
+start: .org #8000
+
+MENU_LINE .equ 20
+INPUT_LINE .equ 21
+
+
+LD A, MENU_LINE
+LD HL, LineBuffer1
+CALL DumpLine
+
+LD A, INPUT_LINE
+LD HL, LineBuffer2
+CALL DumpLine
+
+mainMenu:
+
+LD HL, Menu
+CALL InputNumber
+LD A, H
+CP 0
+JP NZ, errorValor
+
+LD A, L
+CP 1
+JP Z, pokear
+CP 2
+JP Z, buscar
+CP 3
+JP Z, salir
+
+errorValor:
+LD HL, Error
+CALL InputNumber
+JP mainMenu
+
+pokear:
+
+LD HL, Direccion
+CALL InputNumber
+LD A, H
+ADD A, L
+JP C, okValor
+JP Z, errorValor
+
+okValor:
+PUSH HL
+
+LD HL, Valor
+CALL InputNumber
+
+PUSH HL
+POP BC
+POP HL
+LD (HL), C
+
+LD HL, Correcto
+CALL InputNumber
+JP mainMenu
+
+buscar:
+
+
+LD HL, Direccion
+CALL InputNumber
+LD A, H
+ADD A, L
+JP C, okDir
+JP Z, errorValor
+
+okDir:
+PUSH HL
+
+LD HL, Valor
+CALL InputNumber
+
+PUSH HL
+POP BC
+POP HL
+
+PUSH HL
+PUSH BC
+
+LD HL, Buscando
+CALL Print_String
+
+POP BC
+POP HL
+
+;HL is now the start address, C the value to search
+
+
+searchLoop:
+
+LD A, (HL)
+CP C
+
+JP Z, encontrado
+
+INC HL
+LD A, H
+CP 0
+JP NZ, searchLoop
+LD A, L
+CP 0
+JP NZ, searchLoop
+
+LD HL, NoEncuentra
+CALL InputNumber
+
+JP mainMenu
+
+encontrado:
+
+PUSH BC
+PUSH HL
+
+
+LD DE, DirEncontrada
+CALL NumberToString
+LD HL, Encuentra
+CALL InputNumber
+
+PUSH HL
+POP BC
+POP HL
+
+INC HL
+LD A, C
+
+CP 1
+POP BC
+JP Z, searchLoop
+
+JP mainMenu
+
+salir:
+
+LD A, MENU_LINE
+LD HL, LineBuffer1
+CALL RestoreLine
+
+LD A, INPUT_LINE
+LD HL, LineBuffer2
+CALL RestoreLine
+
+
+RET
+
+#include "CustomFunctions.z80asm"
+#include "Output.z80asm"
+#include "Keyboard.z80asm"
+#include "Messages.z80asm"
+#include "RAMVars.z80asm"

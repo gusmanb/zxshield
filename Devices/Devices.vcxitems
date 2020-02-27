@@ -20,10 +20,14 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)ESP01.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)MCP23S17.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)MCP42XXX.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)S25FL208K.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)SR23K.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(MSBuildThisFileDirectory)ESP01.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)MCP23S17.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)MCP42XXX.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)S25FL208K.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)SR23K.h" />
   </ItemGroup>
 </Project>

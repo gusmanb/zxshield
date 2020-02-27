@@ -53,11 +53,17 @@ Project("{F16D4249-6279-474E-8826-742E7FF7445C}") = "ZXPokeadorROM", "ZXPokeador
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Pokeador", "Pokeador", "{D5CEB9CD-BF73-41CA-867F-CCD52BFBA688}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ZXCheatSystemFirmware", "ZXCheatSystemFirmware\ZXCheatSystemFirmware.vcxproj", "{4B69089C-CDB7-4642-AA35-2BDA4593EE7E}"
+EndProject
+Project("{F16D4249-6279-474E-8826-742E7FF7445C}") = "ZXCheatSystemROM", "ZXCheatSystemROM\ZXCheatSystemROM.z80cdproj", "{3DBDA2EF-6254-4BF0-B405-896F31E50D01}"
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		ZXShield\ZXShield.vcxitems*{1950f67d-a659-447c-aba3-2a29d88703e8}*SharedItemsImports = 9
 		ZXShield\ZXShield.vcxitems*{19f6d799-8cc6-4709-88a2-e6ba0f0348cf}*SharedItemsImports = 4
 		ZXShield\ZXShield.vcxitems*{3bb9b133-bfb1-400a-bfa4-369d5f5b338a}*SharedItemsImports = 4
+		Devices\Devices.vcxitems*{4b69089c-cdb7-4642-aa35-2bda4593ee7e}*SharedItemsImports = 4
+		ZXShield\ZXShield.vcxitems*{4b69089c-cdb7-4642-aa35-2bda4593ee7e}*SharedItemsImports = 4
 		ZXShield\ZXShield.vcxitems*{4f4d454d-25bf-4663-9aee-e180d05559da}*SharedItemsImports = 4
 		Devices\Devices.vcxitems*{7bc89c1e-aa1e-4124-940b-f82e682df3e9}*SharedItemsImports = 4
 		ZXShield\ZXShield.vcxitems*{7bc89c1e-aa1e-4124-940b-f82e682df3e9}*SharedItemsImports = 4
@@ -148,6 +154,12 @@ Global
 		{AC372084-4F0B-479D-A41A-559EF6343765}.Release|Any CPU.ActiveCfg = Release|Win32
 		{AC372084-4F0B-479D-A41A-559EF6343765}.Release|x86.ActiveCfg = Release|Win32
 		{AC372084-4F0B-479D-A41A-559EF6343765}.Release|x86.Build.0 = Release|Win32
+		{4B69089C-CDB7-4642-AA35-2BDA4593EE7E}.Debug|Any CPU.ActiveCfg = Debug|Win32
+		{4B69089C-CDB7-4642-AA35-2BDA4593EE7E}.Debug|x86.ActiveCfg = Debug|Win32
+		{4B69089C-CDB7-4642-AA35-2BDA4593EE7E}.Debug|x86.Build.0 = Debug|Win32
+		{4B69089C-CDB7-4642-AA35-2BDA4593EE7E}.Release|Any CPU.ActiveCfg = Release|Win32
+		{4B69089C-CDB7-4642-AA35-2BDA4593EE7E}.Release|x86.ActiveCfg = Release|Win32
+		{4B69089C-CDB7-4642-AA35-2BDA4593EE7E}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

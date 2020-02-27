@@ -1,0 +1,29 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Label="Globals">
+    <CustomProjectExtensionsPath>$(LocalAppData)\CustomProjectSystems\Spect.Net.CodeDiscover\</CustomProjectExtensionsPath>
+    <ProjectGuid>3dbda2ef-6254-4bf0-b405-896f31e50d01</ProjectGuid>
+  </PropertyGroup>
+  <Import Project="$(CustomProjectExtensionsPath)Spect.Net.CodeDiscover.props" />
+  <ItemGroup>
+    <DisassAnn Include="Annotations.disann" />
+    <SpConf Include="Rom\ZxSpectrum.spconf" />
+    <ProjConf Include="Spectrum.projconf" />
+    <Rom Include="Rom\ZxSpectrum48.rom" />
+    <DisassAnn Include="Rom\ZxSpectrum48.disann" />
+    <Z80Asm Include="Z80CodeFiles\Charset.z80asm" />
+    <Z80Asm Include="Z80CodeFiles\CustomFunctions.z80asm" />
+    <Z80Asm Include="Z80CodeFiles\Keyboard.z80asm" />
+    <Z80Asm Include="Z80CodeFiles\Messages.z80asm" />
+    <Z80Asm Include="Z80CodeFiles\Output.z80asm" />
+    <Z80Asm Include="Z80CodeFiles\PokeadorAuto.z80asm" />
+    <Z80Asm Include="Z80CodeFiles\RAMVars.z80asm" />
+    <Z80Asm Include="Z80CodeFiles\ROMPokeador.z80asm" />
+    <Z80Asm Include="Z80CodeFiles\Sound.z80asm" />
+    <Z80Asm Include="Z80CodeFiles\Test.z80asm" />
+    <ZxBasic Include="ZxBasicFiles\Program.zxbas" />
+    <Z80Test Include="Z80UnitTests\UnitTest.z80test" />
+    <Tzx Include="TapeFiles\Welcome.tzx" />
+  </ItemGroup>
+  <Import Project="$(CustomProjectExtensionsPath)Spect.Net.CodeDiscover.targets" />
+</Project>

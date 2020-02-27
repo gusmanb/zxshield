@@ -4,6 +4,7 @@
  Author:	geniw
 */
 
+#include <SRAM_23LC.h>
 #include "arduino.h"
 #include "ZXShield.h"
 #include "Dumper.h"
