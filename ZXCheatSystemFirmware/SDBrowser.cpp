@@ -1,6 +1,6 @@
 #include "SDBrowser.h"
 
-SDBrowser::SDBrowser(byte SDCs, dword Speed, byte PageSize)
+SDNavigator::SDNavigator(byte SDCs, dword Speed, byte PageSize)
 {
 	pageSize = PageSize;
 	mCspin = SDCs;
@@ -12,7 +12,7 @@ SDBrowser::SDBrowser(byte SDCs, dword Speed, byte PageSize)
 	digitalWrite(mCspin, HIGH);
 }
 
-bool SDBrowser::open()
+bool SDNavigator::open()
 {
 	if (isOpen)
 		return false;
@@ -25,7 +25,7 @@ bool SDBrowser::open()
 	return isOpen;
 }
 
-bool SDBrowser::close()
+bool SDNavigator::close()
 {
 	if (!isOpen)
 		return false;
@@ -40,12 +40,17 @@ bool SDBrowser::close()
 	return true;
 }
 
-bool SDBrowser::nextPage()
+bool SDNavigator::nextPage()
 {
 	if (!isOpen)
 		return false;
 
 	if (page[pageSize - 1].name[0] == 0)
+		return false;
+
+	SDFile file = currentEntry.openNextFile();
+
+	if (!file)
 		return false;
 
 	memset(page, 0, sizeof(SDBrowserEntry) * pageSize);
@@ -54,8 +59,6 @@ bool SDBrowser::nextPage()
 
 	for (int buc = 0; buc < pageSize; buc++)
 	{
-		SDFile file = currentEntry.openNextFile();
-
 		if (!file)
 			break;
 
@@ -65,14 +68,19 @@ bool SDBrowser::nextPage()
 		page[buc].isDir = file.isDirectory();
 		page[buc].size = file.size();
 		file.close();
+
+		file = currentEntry.openNextFile();
 	}
+
+	if (file)
+		file.close();
 
 	pageStartIndex += pageSize;
 
 	return true;
 }
 
-bool SDBrowser::previousPage()
+bool SDNavigator::previousPage()
 {
 	if (!isOpen || pageStartIndex == 0)
 		return false;
@@ -114,7 +122,7 @@ bool SDBrowser::previousPage()
 	return true;
 }
 
-bool SDBrowser::openRoot()
+bool SDNavigator::openRoot()
 {
 	if (!isOpen)
 		return false;
@@ -153,7 +161,7 @@ bool SDBrowser::openRoot()
 	return true;
 }
 
-bool SDBrowser::openFolder(byte Index)
+bool SDNavigator::openFolder(byte Index)
 {
 	if (!isOpen || Index >= pageSize)
 		return false;
@@ -198,7 +206,7 @@ bool SDBrowser::openFolder(byte Index)
 	return true;
 }
 
-bool SDBrowser::openFolder(const char* Path)
+bool SDNavigator::openFolder(const char* Path)
 {
 	if (!isOpen)
 		return false;
@@ -240,9 +248,8 @@ bool SDBrowser::openFolder(const char* Path)
 	return true;
 }
 
-bool SDBrowser::parentFolder()
+bool SDNavigator::parentFolder()
 {
-
 	if (!isOpen || !strcmp(currentPath, "/"))
 		return false;
 
@@ -280,7 +287,7 @@ bool SDBrowser::parentFolder()
 	return true;
 }
 
-SDFile SDBrowser::openFile(byte Index, char* PathOutput = NULL)
+SDFile SDNavigator::openFile(byte Index, char* PathOutput = NULL)
 {
 	if (!isOpen || Index >= pageSize)
 		return SDFile();
@@ -295,9 +302,6 @@ SDFile SDBrowser::openFile(byte Index, char* PathOutput = NULL)
 
 	strcat(currentPath, page[Index].name);
 
-	Serial.println("PATH");
-	Serial.println(currentPath);
-
 	SDFile file = SD.open(currentPath);
 
 	if (PathOutput != NULL)
@@ -308,17 +312,17 @@ SDFile SDBrowser::openFile(byte Index, char* PathOutput = NULL)
 	return file;
 }
 
-SDFile SDBrowser::openFile(const char* Path)
+SDFile SDNavigator::openFile(const char* Path)
 {
 	return SD.open(Path);
 }
 
-SDFile SDBrowser::createFile(const char* Path)
+SDFile SDNavigator::createFile(const char* Path)
 {
 	return SD.open(Path, O_RDWR | O_CREAT);
 }
 
-bool SDBrowser::deleteFile(const char* Path)
+bool SDNavigator::deleteFile(const char* Path)
 {
 	return SD.remove(Path);
 }

@@ -41,6 +41,9 @@ namespace ZXSerialLoaderLibrary
                 case ".z80":
                     program = Z80File.Load(FileName);
                     break;
+                case ".tap":
+                    program = TAPFile.Load(FileName);
+                    break;
                 default:
                     return ZXSerialLoaderResult.Unsupported;
             }
@@ -577,281 +580,281 @@ namespace ZXSerialLoaderLibrary
             }
           }
 
-    //    class TAPFile : SpectrumFile
-    //    {
-    //        public override int StartAddress { get; set; } = int.MaxValue;
-    //        public override int EndAddress { get; set; } = int.MinValue;
-    //        public override byte[] Header { get; set; } = null;
-    //        public override byte[] Data { get; set; } = new byte[64 * 1024];
-    //        public override string Operation => "T";
-    //        public static TAPFile Load(string FileName)
-    //        {
-    //            TAPFile file = new TAPFile();
+        public class TAPFile : SpectrumFile
+        {
+            public override int StartAddress { get; set; } = int.MaxValue;
+            public override int EndAddress { get; set; } = int.MinValue;
+            public override byte[] Header { get; set; } = null;
+            public override byte[] Data { get; set; } = new byte[64 * 1024];
+            public override string Operation => "T";
+            public static TAPFile Load(string FileName)
+            {
+                TAPFile file = new TAPFile();
 
-    //            byte[] data = File.ReadAllBytes(FileName);
+                byte[] data = File.ReadAllBytes(FileName);
 
-    //            List<TAPBlock> blocks = new List<TAPBlock>();
+                List<TAPBlock> blocks = new List<TAPBlock>();
 
-    //            int pos = 0;
+                int pos = 0;
 
-    //            while (pos < data.Length)
-    //            {
-    //                TAPBlock block = TAPBlock.LoadBlock(data, pos, out pos);
+                while (pos < data.Length)
+                {
+                    TAPBlock block = TAPBlock.LoadBlock(data, pos, out pos);
 
-    //                if (block == null)
-    //                    return null;
+                    if (block == null)
+                        return null;
 
-    //                blocks.Add(block);
-    //            }
+                    blocks.Add(block);
+                }
 
-    //            byte[] basicLoader = null;
+                byte[] basicLoader = null;
 
-    //            while (blocks.Count > 0)
-    //            {
-    //                if (blocks.Count < 2)
-    //                    return null;
+                while (blocks.Count > 0)
+                {
+                    if (blocks.Count < 2)
+                        return null;
 
-    //                TAPBlock headerBlock = blocks[0];
-    //                blocks.RemoveAt(0);
-    //                TAPBlock dataBlock = blocks[0];
-    //                blocks.RemoveAt(0);
+                    TAPBlock headerBlock = blocks[0];
+                    blocks.RemoveAt(0);
+                    TAPBlock dataBlock = blocks[0];
+                    blocks.RemoveAt(0);
 
-    //                if (!headerBlock.IsHeader || dataBlock.IsHeader || 
-    //                    !headerBlock.IsValid || !dataBlock.IsValid)
-    //                    return null;
+                    if (!headerBlock.IsHeader || dataBlock.IsHeader ||
+                        !headerBlock.IsValid || !dataBlock.IsValid)
+                        return null;
 
-    //                TAPHeader realHeader = headerBlock.GetHeader();
-    //                byte[] realData = dataBlock.GetData();
+                    TAPHeader realHeader = headerBlock.GetHeader();
+                    byte[] realData = dataBlock.GetData();
 
-    //                if (realHeader.Type == TAPSpectrumDataType.Program)
-    //                {
-    //                    if (basicLoader != null)
-    //                        return null;
+                    if (realHeader.Type == TAPSpectrumDataType.Program)
+                    {
+                        if (basicLoader != null)
+                            return null;
 
-    //                    basicLoader = realData;
-    //                }
-    //                else if (realHeader.Type == TAPSpectrumDataType.Code)
-    //                {
-    //                    if (realHeader.Length != realData.Length)
-    //                        return null;
+                        basicLoader = realData;
+                    }
+                    else if (realHeader.Type == TAPSpectrumDataType.Code)
+                    {
+                        if (realHeader.Length != realData.Length)
+                            return null;
 
-    //                    Buffer.BlockCopy(realData, 0, file.Data, realHeader.Param1, realData.Length);
+                        Buffer.BlockCopy(realData, 0, file.Data, realHeader.Param1, realData.Length);
 
-    //                    if (realHeader.Param1 < file.StartAddress)
-    //                        file.StartAddress = realHeader.Param1;
+                        if (realHeader.Param1 < file.StartAddress)
+                            file.StartAddress = realHeader.Param1;
 
-    //                    if (realHeader.Param1 + realData.Length > file.EndAddress)
-    //                        file.EndAddress = realHeader.Param1 + realData.Length;
-    //                }
-    //                else
-    //                    return null;
-    //            }
+                        if (realHeader.Param1 + realData.Length > file.EndAddress)
+                            file.EndAddress = realHeader.Param1 + realData.Length;
+                    }
+                    else
+                        return null;
+                }
 
-    //            if (basicLoader == null)
-    //                return null;
+                if (basicLoader == null)
+                    return null;
 
-    //            file.Header = FindEntryPoint(basicLoader);
+                file.Header = FindEntryPoint(basicLoader);
 
-    //            if (file.Header == null)
-    //                return null;
+                if (file.Header == null)
+                    return null;
 
-    //            return file;
+                return file;
 
-    //        }
+            }
 
-    //        private static byte[] FindEntryPoint(byte[] BasicLoader)
-    //        {
-    //            byte[] address = null;
+            private static byte[] FindEntryPoint(byte[] BasicLoader)
+            {
+                byte[] address = null;
 
-    //            string program = ParseBasicProgram(BasicLoader);
+                string program = ParseBasicProgram(BasicLoader);
 
-    //            Regex regUsr = new Regex("RANDOMIZE USR ([0-9]+)");
-    //            var match = regUsr.Match(program);
+                Regex regUsr = new Regex("RANDOMIZE USR ([0-9]+)");
+                var match = regUsr.Match(program);
 
-    //            if (match != null)
-    //                address = BitConverter.GetBytes((ushort)32768);
+                if (match != null)
+                    address = BitConverter.GetBytes((ushort)32768);
 
-    //            return address;
-    //        }
+                return address;
+            }
 
-    //        static string[] extendedChars = new string[] {" ", "▝", "▘", "▀", "▗", "▐", "▚", "▜", "▖", "▞", "▌", "▛", "▄", "▟",
-    //"▙", "█", "Ⓐ", "Ⓑ", "Ⓒ", "Ⓓ", "Ⓔ", "Ⓕ", "Ⓖ", "Ⓗ", "Ⓘ", "Ⓙ", "Ⓚ",
-    //"Ⓛ", "Ⓜ", "Ⓝ", "Ⓞ", "Ⓟ", "Ⓠ", "Ⓡ", "Ⓢ", "Ⓣ", "Ⓤ", "RND", "INKEY$",
-    //"PI", "FN ", "POINT ", "SCREEN$ ", "ATTR ", "AT ", "TAB ", "VAL$ ",
-    //"CODE ", "VAL ", "LEN ", "SIN ", "COS ", "TAN ", "ASN ", "ACS ", "ATN ",
-    //"LN ", "EXP ", "INT ", "SQR ", "SGN ", "ABS ", "PEEK ", "IN ", "USR ",
-    //"STR$ ", "CHR$ ", "NOT ", "BIN ", " OR ", " AND ", "<=", ">=", "<>",
-    //" LINE ", " THEN ", " TO ", " STEP ", " DEF FN ", " CAT ", " FORMAT ",
-    //" MOVE ", " ERASE ", " OPEN #", " CLOSE #", " MERGE ", " VERIFY ",
-    //" BEEP ", " CIRCLE ", " INK ", " PAPER ", " FLASH ", " BRIGHT ",
-    //" INVERSE ", " OVER ", " OUT ", " LPRINT ", " LLIST ", " STOP ", " READ ",
-    //" DATA ", " RESTORE ", " NEW ", " BORDER ", " CONTINUE ", " DIM ", " REM ",
-    //" FOR ", " GO TO ", " GO SUB ", " INPUT ", " LOAD ", " LIST ", " LET ",
-    //" PAUSE ", " NEXT ", " POKE ", " PRINT ", " PLOT ", " RUN ", " SAVE ",
-    //" RANDOMIZE ", " IF ", " CLS ", " DRAW ", " CLEAR ", " RETURN ", " COPY " };
+            static string[] extendedChars = new string[] {" ", "▝", "▘", "▀", "▗", "▐", "▚", "▜", "▖", "▞", "▌", "▛", "▄", "▟",
+    "▙", "█", "Ⓐ", "Ⓑ", "Ⓒ", "Ⓓ", "Ⓔ", "Ⓕ", "Ⓖ", "Ⓗ", "Ⓘ", "Ⓙ", "Ⓚ",
+    "Ⓛ", "Ⓜ", "Ⓝ", "Ⓞ", "Ⓟ", "Ⓠ", "Ⓡ", "Ⓢ", "Ⓣ", "Ⓤ", "RND", "INKEY$",
+    "PI", "FN ", "POINT ", "SCREEN$ ", "ATTR ", "AT ", "TAB ", "VAL$ ",
+    "CODE ", "VAL ", "LEN ", "SIN ", "COS ", "TAN ", "ASN ", "ACS ", "ATN ",
+    "LN ", "EXP ", "INT ", "SQR ", "SGN ", "ABS ", "PEEK ", "IN ", "USR ",
+    "STR$ ", "CHR$ ", "NOT ", "BIN ", " OR ", " AND ", "<=", ">=", "<>",
+    " LINE ", " THEN ", " TO ", " STEP ", " DEF FN ", " CAT ", " FORMAT ",
+    " MOVE ", " ERASE ", " OPEN #", " CLOSE #", " MERGE ", " VERIFY ",
+    " BEEP ", " CIRCLE ", " INK ", " PAPER ", " FLASH ", " BRIGHT ",
+    " INVERSE ", " OVER ", " OUT ", " LPRINT ", " LLIST ", " STOP ", " READ ",
+    " DATA ", " RESTORE ", " NEW ", " BORDER ", " CONTINUE ", " DIM ", " REM ",
+    " FOR ", " GO TO ", " GO SUB ", " INPUT ", " LOAD ", " LIST ", " LET ",
+    " PAUSE ", " NEXT ", " POKE ", " PRINT ", " PLOT ", " RUN ", " SAVE ",
+    " RANDOMIZE ", " IF ", " CLS ", " DRAW ", " CLEAR ", " RETURN ", " COPY " };
 
-    //        static string ParseBasicProgram(byte[] Program)
-    //        {
-    //            StringBuilder sb = new StringBuilder();
+            static string ParseBasicProgram(byte[] Program)
+            {
+                StringBuilder sb = new StringBuilder();
 
-    //            int pos = 0;
+                int pos = 0;
 
-    //            while (pos + 4 < Program.Length)
-    //            {
-    //                int lineNumber = BigEndianWord(Program, pos);
-    //                pos += 2;
-    //                int lineLength = Word(Program, pos);
-    //                pos += 2;
+                while (pos + 4 < Program.Length)
+                {
+                    int lineNumber = BigEndianWord(Program, pos);
+                    pos += 2;
+                    int lineLength = Word(Program, pos);
+                    pos += 2;
 
-    //                if (lineLength + pos > Program.Length)
-    //                    break;
+                    if (lineLength + pos > Program.Length)
+                        break;
 
-    //                sb.Append($"{lineNumber} {DecodeBasicLine(Program, pos, lineLength)}");
+                    sb.Append($"{lineNumber} {DecodeBasicLine(Program, pos, lineLength)}");
 
-    //                pos += lineLength;
-    //            }
+                    pos += lineLength;
+                }
 
-    //            return sb.ToString();
-    //         }
+                return sb.ToString();
+            }
 
-    //        private static StringBuilder DecodeBasicLine(byte[] Program, int Start, int Length)
-    //        {
-    //            StringBuilder sb = new StringBuilder();
-    //            int pos = 0;
+            private static StringBuilder DecodeBasicLine(byte[] Program, int Start, int Length)
+            {
+                StringBuilder sb = new StringBuilder();
+                int pos = 0;
 
-    //            while (pos < Length)
-    //            {
-    //                byte ch = Program[pos + Start];
-    //                pos++;
+                while (pos < Length)
+                {
+                    byte ch = Program[pos + Start];
+                    pos++;
 
-    //                if (0x10 <= ch && ch <= 0x15)
-    //                    pos++;
-    //                else if (0x16 <= ch && ch <= 0x17)
-    //                    pos += 2;
-    //                else if (ch == 0x0E)
-    //                    pos += 5;
-    //                else
-    //                    sb.Append(ConvertChar(ch, sb.Length > 0 && sb[sb.Length - 1] == ' '));
-    //            }
+                    if (0x10 <= ch && ch <= 0x15)
+                        pos++;
+                    else if (0x16 <= ch && ch <= 0x17)
+                        pos += 2;
+                    else if (ch == 0x0E)
+                        pos += 5;
+                    else
+                        sb.Append(ConvertChar(ch, sb.Length > 0 && sb[sb.Length - 1] == ' '));
+                }
 
-    //            return sb;
-    //        }
+                return sb;
+            }
 
-    //        private static string ConvertChar(byte Chr, bool NoLeadingSpace)
-    //        {
-    //            if (Chr == 0x0D)
-    //                return "\n";
-    //            else if (Chr >= 0x80)
-    //            {
-    //                string res = extendedChars[Chr - 0x80];
+            private static string ConvertChar(byte Chr, bool NoLeadingSpace)
+            {
+                if (Chr == 0x0D)
+                    return "\n";
+                else if (Chr >= 0x80)
+                {
+                    string res = extendedChars[Chr - 0x80];
 
-    //                if (NoLeadingSpace && Chr >= 0xA5 && res[0] == ' ')
-    //                    return res.Substring(1);
+                    if (NoLeadingSpace && Chr >= 0xA5 && res[0] == ' ')
+                        return res.Substring(1);
 
-    //                return res;
-    //            }
-    //            else if (Chr == 0x5E)
-    //                return "↑";
-    //            else if (Chr == 0x60) 
-    //                return "£";
-    //            else if (Chr == 0x7F) 
-    //                return "©";
-    //            else
-    //                return new string((char)Chr, 1);
-    //        }
+                    return res;
+                }
+                else if (Chr == 0x5E)
+                    return "↑";
+                else if (Chr == 0x60)
+                    return "£";
+                else if (Chr == 0x7F)
+                    return "©";
+                else
+                    return new string((char)Chr, 1);
+            }
 
-    //        private static ushort Word(byte[] data, int offset)
-    //        {
-    //            return (ushort)(data[offset] | (data[offset + 1] << 8));
-    //        }
-    //        private static ushort BigEndianWord(byte[] data, int offset)
-    //        {
-    //            return (ushort)(data[offset + 1] | (data[offset] << 8));
-    //        }
-    //        class TAPHeader
-    //        {
-    //            public TAPSpectrumDataType Type;
-    //            public byte[] Name;
-    //            public ushort Length;
-    //            public ushort Param1;
-    //            public ushort Param2;
-    //            public byte Flag;
-    //            public byte Checksum;
-    //        }
+            private static ushort Word(byte[] data, int offset)
+            {
+                return (ushort)(data[offset] | (data[offset + 1] << 8));
+            }
+            private static ushort BigEndianWord(byte[] data, int offset)
+            {
+                return (ushort)(data[offset + 1] | (data[offset] << 8));
+            }
+            class TAPHeader
+            {
+                public TAPSpectrumDataType Type;
+                public byte[] BinaryName;
+                public string Name { get { return BinaryName == null ? null : Encoding.ASCII.GetString(BinaryName); } }
+                public ushort Length;
+                public ushort Param1;
+                public ushort Param2;
+                public byte Checksum;
+            }
 
-    //        class TAPBlock
-    //        {
-    //            public ushort Length;
-    //            public byte[] Data;
+            class TAPBlock
+            {
+                public ushort Length;
+                public byte[] Data;
 
-    //            public bool IsValid 
-    //            { 
-    //                get 
-    //                {
-    //                    byte current = Data[0];
+                public bool IsValid
+                {
+                    get
+                    {
+                        byte current = Data[0];
 
-    //                    for (int buc = 1; buc < Data.Length; buc++)
-    //                        current ^= Data[buc];
+                        for (int buc = 1; buc < Data.Length; buc++)
+                            current ^= Data[buc];
 
-    //                    return current == 0;
-    //                } 
-    //            }
+                        return current == 0;
+                    }
+                }
 
-    //            public bool IsHeader { get { return Length == 19 && Data[0] == 0x00; } }
+                public bool IsHeader { get { return Length == 19 && Data[0] == 0x00; } }
 
-    //            public TAPHeader GetHeader()
-    //            {
-    //                if (!IsHeader || !IsValid)
-    //                    return null;
+                public TAPHeader GetHeader()
+                {
+                    if (!IsHeader || !IsValid)
+                        return null;
 
-    //                TAPHeader header = new TAPHeader();
-    //                header.Type = (TAPSpectrumDataType)Data[1];
-    //                header.Name = new byte[10];
-    //                Buffer.BlockCopy(Data, 2, header.Name, 0, 10);
-    //                header.Length = Word(Data, 12);
-    //                header.Param1 = Word(Data, 14);
-    //                header.Param2 = Word(Data, 16);
-    //                header.Checksum = Data[18];
-    //                return header;
-    //            }
+                    TAPHeader header = new TAPHeader();
+                    header.Type = (TAPSpectrumDataType)Data[1];
+                    header.BinaryName = new byte[10];
+                    Buffer.BlockCopy(Data, 2, header.BinaryName, 0, 10);
+                    header.Length = Word(Data, 12);
+                    header.Param1 = Word(Data, 14);
+                    header.Param2 = Word(Data, 16);
+                    header.Checksum = Data[18];
+                    return header;
+                }
 
-    //            public byte[] GetData()
-    //            {
-    //                if (IsHeader || !IsValid)
-    //                    return null;
+                public byte[] GetData()
+                {
+                    if (IsHeader || !IsValid)
+                        return null;
 
-    //                byte[] data = new byte[Data.Length - 2];
-    //                Buffer.BlockCopy(Data, 1, data, 0, data.Length);
-    //                return data;
-    //            }
+                    byte[] data = new byte[Data.Length - 2];
+                    Buffer.BlockCopy(Data, 1, data, 0, data.Length);
+                    return data;
+                }
 
-    //            public static TAPBlock LoadBlock(byte[] FileData, int StartPos, out int EndPos)
-    //            {
-    //                EndPos = 0;
-                    
-    //                TAPBlock block = new TAPBlock();
-                    
-    //                block.Length = Word(FileData, StartPos);
+                public static TAPBlock LoadBlock(byte[] FileData, int StartPos, out int EndPos)
+                {
+                    EndPos = 0;
 
-    //                if (block.Length + StartPos + 2 > FileData.Length)
-    //                    return null;
+                    TAPBlock block = new TAPBlock();
 
-    //                block.Data = new byte[block.Length];
-    //                Buffer.BlockCopy(FileData, StartPos + 2, block.Data, 0, block.Data.Length);
+                    block.Length = Word(FileData, StartPos);
 
-    //                EndPos = StartPos + 2 + block.Length;
+                    if (block.Length + StartPos + 2 > FileData.Length)
+                        return null;
 
-    //                return block;
-    //            }
-    //        }
+                    block.Data = new byte[block.Length];
+                    Buffer.BlockCopy(FileData, StartPos + 2, block.Data, 0, block.Data.Length);
 
-    //        enum TAPSpectrumDataType : byte
-    //        {
-    //            Program = 0,
-    //            Number = 1,
-    //            Character = 2,
-    //            Code = 3
-    //        }
-    //    }
+                    EndPos = StartPos + 2 + block.Length;
+
+                    return block;
+                }
+            }
+
+            enum TAPSpectrumDataType : byte
+            {
+                Program = 0,
+                Number = 1,
+                Character = 2,
+                Code = 3
+            }
+        }
     }
 }

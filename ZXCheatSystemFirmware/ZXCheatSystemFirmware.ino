@@ -5,6 +5,7 @@
 */
 
 #include <Adafruit_ST7735.h>
+#include <SD.h>
 
 #include "Arduino.h"
 #include "SPI.h"
@@ -12,6 +13,8 @@
 #include "S25FL208K.h"
 #include "sembei_small.h"
 #include "MenuSystem.h"
+#include "DialogHelper.h"
+#include "SnapshotBrowser.h"
 #include "ZXShield.h"
 
 #include "PokearProg.h"
@@ -19,6 +22,8 @@
 #include "DumpProg.h"
 #include "SDBrowser.h"
 #include "Z80Loader.h"
+
+
 
 #define SRAM_CS     8
 #define FLASH_CS    9
@@ -51,7 +56,7 @@
 
 #define BROWSER_PAGE_SIZE 18
 
-int appPage = 0;
+#define RGB_COLOR(r,g,b) (((dword)(r & 0xF8)) << 8 | ((dword)(g & 0xFC)) << 3 | ((dword)(b & 0xF8)) >> 3)
 
 volatile byte* volatile header;			//pointer to SNA header in the virtual RAM
 volatile byte* volatile status;			//Pointer to status in the virtual RAM
@@ -67,46 +72,43 @@ volatile bool vramDisabled = false;
 
 volatile word exitAddress;
 
-
 SR23K* sram;
 S25FL208K* flash;
 Adafruit_ST7735* screen;
-SDBrowser* browser;
+SDNavigator* browser; 
 
-char currentSnapshot;
-
-
-Menu systemMenu =
+Menu mainMenu =
 {
-    .menuTitle = " - CheatSystem 1.0 - ",
+    .menuTitle = "- CheatSystem 1.0 -",
     .menuEntries = {
-                        "1 - Pokeador         ",
-                        "2 - Load snapshot    ",
-                        "3 - Save snapshot    ",
-                        "4 - Delete snapshot  ",
-                        "5 - SD browser       "
+                        " > Pokeador       ",
+                        " > Load snapshot  ",
+                        " > Save snapshot  ",
+                        " > Delete snapshot",
+                        " > SD browser     "
                     },
     .menuEntriesCount = 5,
     .currentEntry = 0
 };
 
-byte snapshotStatus[BROWSER_PAGE_SIZE];
-
+#define MENU_ENTRY_POKEADOR 0
+#define MENU_ENTRY_LOAD 1
+#define MENU_ENTRY_SAVE 2
+#define MENU_ENTRY_DELETE 3
+#define MENU_ENTRY_BROWSER 4
 
 char browserRecordIndex = 0;
 byte browserCurrentPageSize = 0;
 bool browserDots = false;
-
+MenuSystem* menu;
+DialogHelper* dialog;
+SnapshotBrowser* spBrowser;
 
 // the setup function runs once when you press reset or power the board
 void setup() {
 
     pinMode(SD_CS, OUTPUT);
     digitalWrite(SD_CS, 1);
-
-    Serial.begin(115200);
-
-    Serial.println("INIT");
 
     ZXShield::Initialize();
     ZXShield::ROM.SetROMHandler(RAMHandler);
@@ -116,24 +118,21 @@ void setup() {
     pinMode(BTN_DOWN, INPUT_PULLUP);
     pinMode(BTN_UP, INPUT_PULLUP);
 
+    browser = new SDNavigator(SD_CS, 8000000, BROWSER_PAGE_SIZE);
+
     InitScreen();
 
     flash = new S25FL208K(&SPI, FLASH_CS, 8000000, 5000);
     sram = new SR23K(&SPI, SRAM_CS, 8000000);
-    browser = new SDBrowser(SD_CS, 8000000, BROWSER_PAGE_SIZE);
+    
+    menu = new MenuSystem(screen, 128, 160, 1, BTN_UP, BTN_DOWN, BTN_SELECT);
+    dialog = new DialogHelper(screen, 128, 160, 1, BTN_UP, BTN_DOWN, BTN_SELECT);
+    spBrowser = new SnapshotBrowser(flash, screen, 128, 160, 1, BTN_UP, BTN_DOWN, BTN_SELECT);
 
-    for (int buc = 0; buc < 256; buc++)
-    {
-        Serial.println("WRITE");
-        Serial.println(buc);
-        sram->writeByte(buc, buc);
-        Serial.println("READ");
-        Serial.println(sram->readByte(buc));
-    }
+    
 
-    memset(snapshotStatus, 0, 18);
+    delay(2000);
 
-    Serial.println("READY");
 }
 
 void InitScreen()
@@ -147,331 +146,25 @@ void InitScreen()
     screen->drawRGBBitmap(0, 80, sembei_lower, 128, 80);
 }
 
-void showMessage(const char* message, bool waitConfirm = true)
-{
-    screen->setTextColor(ST7735_WHITE, ST7735_BLUE);
-
-    screen->setCursor(0, 66);
-    screen->println("                     ");
-    word mY = screen->getCursorY();
-    screen->println("                     ");
-    screen->setCursor(0, mY);
-    screen->println(message);
-    screen->println("                     ");
-
-    if (waitConfirm)
-    {
-        while (!ACTION_SELECTED)
-        {
-            delay(10);
-        }
-
-        while (ACTION_SELECTED)
-        {
-            delay(10);
-        }
-    }
-}
-
-bool confirmMessage(const char* message)
-{
-    screen->setTextColor(ST7735_WHITE, ST7735_BLUE);
-
-    screen->setCursor(0, 66);
-    screen->println("                     ");
-    word mY = screen->getCursorY();
-    screen->println("                     ");
-    screen->setCursor(0, mY);
-    screen->println(message);
-    screen->println("                     ");
-
-
-    mY = screen->getCursorY();
-
-    screen->setTextColor(ST7735_BLUE, ST7735_WHITE);
-    screen->println(" -No                 ");
-    screen->setTextColor(ST7735_WHITE, ST7735_BLUE);
-    screen->println(" -Yes                ");
-    screen->println("                     ");
-
-    bool answer = false;
-    bool selected = false;
-
-    while (!selected)
-    {
-        if (ACTION_SELECTED)
-        {
-            while (ACTION_SELECTED)
-            {
-                delay(10);
-            }
-
-            selected = true;
-            break;
-        }
-        else if (ACTION_UP || ACTION_DOWN)
-        {
-            while (ACTION_UP || ACTION_DOWN)
-            {
-                delay(10);
-            }
-
-            answer = !answer;
-
-            screen->setCursor(0, mY);
-
-            if (!answer)
-            {
-                screen->setTextColor(ST7735_BLUE, ST7735_WHITE);
-                screen->println(" -No                 ");
-                screen->setTextColor(ST7735_WHITE, ST7735_BLUE);
-                screen->println(" -Yes                ");
-            }
-            else
-            {
-                screen->setTextColor(ST7735_WHITE, ST7735_BLUE);
-                screen->println(" -No                 ");
-                screen->setTextColor(ST7735_BLUE, ST7735_WHITE);
-                screen->println(" -Yes                ");
-            }
-        }
-    }
-
-    return answer;
-}
-
-void showMenu()
-{
-    screen->setTextColor(ST7735_WHITE, ST7735_BLACK);
-
-    screen->fillScreen(ST7735_BLACK);
-    screen->setCursor(0, 1);
-    screen->println(systemMenu.menuTitle);
-    screen->println();
-    screen->println();
-
-    for (int buc = 0; buc < systemMenu.menuEntriesCount; buc++)
-    {
-        if (buc == systemMenu.currentEntry)
-            screen->setTextColor(ST7735_BLACK, ST7735_WHITE);
-         
-        screen->println(systemMenu.menuEntries[buc]);
-
-        if (buc == systemMenu.currentEntry)
-            screen->setTextColor(ST7735_WHITE, ST7735_BLACK);
-    }
-}
-
-void previousOption()
-{
-    systemMenu.currentEntry--;
-
-    if (systemMenu.currentEntry < 0)
-        systemMenu.currentEntry = systemMenu.menuEntriesCount - 1;
-
-    showMenu();
-}
-
-void nextOption()
-{
-    systemMenu.currentEntry++;
-
-    if (systemMenu.currentEntry >= systemMenu.menuEntriesCount)
-        systemMenu.currentEntry = 0;
-
-    showMenu();
-}
-
-void showSnapshotSelector()
-{
-    currentSnapshot = 0;
-
-    readSnapshotStatus();
-
-    screen->setCursor(0, 0);
-    screen->fillScreen(ST7735_BLACK);
-    screen->setCursor(0, 0);
-                    
-    screen->println(" - Choose snapshot - ");
-
-    for (int x = 0; x < 4; x++)
-    {
-        for (int y = 0; y < 4; y++)
-        {
-
-            word color = 0;
-
-            byte currentSnapshot = (y * 4) + x;
-
-            if (snapshotStatus[currentSnapshot] == 1)
-                color = ST7735_RED;
-            else
-                color = ST7735_CYAN;
-
-            word xCoord = x * 32;
-            word yCoord = y * 32 + 16;
-            
-            screen->fillRect(xCoord + 4, yCoord + 4, 24, 24, color);
-            
-        }
-    }
-
-    screen->setCursor(0, 160 - 12);
-    screen->setTextColor(ST7735_GREEN, ST7735_RED);
-    screen->println("        CANCEL       ");
-
-    showSelectedSnapshot();
-}
-
-void readSnapshotStatus()
-{
-    for (int buc = 0; buc < 16; buc++)
-    {
-        dword currentSector = buc;
-        currentSector = currentSector * 64;
-        currentSector = currentSector * 1024;
-
-        byte value;
-
-        Serial.println("STATUS SECTOR");
-        Serial.println(currentSector);
-
-        bool res = flash->readData(currentSector, 1, &value);
-
-        if (!res || value != 0xFF)
-            snapshotStatus[buc] = 1;
-        else
-            snapshotStatus[buc] = 0;
-    }
-}
-
-void showSelectedSnapshot()
-{
-    if (currentSnapshot == 16)
-    {
-        screen->setCursor(0, 160 - 12);
-        screen->setTextColor(ST7735_RED, ST7735_GREEN);
-        screen->println("        CANCEL       ");
-    }
-    else
-    {
-        int x = currentSnapshot % 4;
-        int y = (currentSnapshot - x) / 4;
-
-        int xCoord = x * 32;
-        int yCoord = y * 32 + 16;
-
-        screen->drawRect(xCoord, yCoord, 32, 32, ST7735_YELLOW);
-    }
-}
-
-void eraseSelectedSnapshot()
-{
-    if (currentSnapshot == 16)
-    {
-        screen->setCursor(0, 160 - 12);
-        screen->setTextColor(ST7735_GREEN, ST7735_RED);
-        screen->println("        CANCEL       ");
-    }
-    else
-    {
-        
-        int x = currentSnapshot % 4;
-        int y = (currentSnapshot - x) / 4;
-
-        int xCoord = x * 32;
-        int yCoord = y * 32 + 16;
-
-        screen->drawRect(xCoord, yCoord, 32, 32, ST7735_BLACK);
-    }
-}
-
-void previousSnapshot()
-{
-    eraseSelectedSnapshot();
-
-    currentSnapshot--;
-
-    if (currentSnapshot < 0)
-        currentSnapshot = 16;
-
-    showSelectedSnapshot();
-}
-
-void nextSnapshot()
-{
-    eraseSelectedSnapshot();
-
-    currentSnapshot++;
-
-    if (currentSnapshot > 16)
-        currentSnapshot = 0;
-
-    showSelectedSnapshot();
-}
-
-void chooseSnapshot()
-{
-    switch (appPage)
-    {
-    case LOAD_SNAPSHOT_PAGE:
-
-        if (snapshotStatus[currentSnapshot])
-        {
-            loadSnapshot();
-            appPage = 1;
-            showMenu();
-        }
-        else
-        {
-            showMessage("Empty snapshot");
-            showSnapshotSelector();
-        }
-
-        break;
-    case SAVE_SNAPSHOT_PAGE:
-
-        if (!snapshotStatus[currentSnapshot])
-        {
-            saveSnapshot();
-            appPage = 1;
-            showMenu();
-        }
-        else
-        {
-            showMessage("Used snapshot");
-            showSnapshotSelector();
-        }
-
-        break;
-    case ERASE_SNAPSHOT_PAGE:
-
-        if (snapshotStatus[currentSnapshot])
-        {
-            if (confirmMessage("Erase?"))
-                eraseSnapshot();
-                
-            showSnapshotSelector();
-
-        }
-        else
-        {
-            showMessage("Empty snapshot");
-            showSnapshotSelector();
-        }
-
-        break;
-    }
-}
-
 void loadSnapshot()
 {
+    while (true)
+    {
+        if (!spBrowser->Show())
+            return;
+
+        if (spBrowser->IsEmpty())
+            dialog->ShowMessage("Empty snapshot");
+        else
+            break;
+    }
+
     loadProgram(PROG_LOAD);
 
     bool finished = false;
     bool first = true;
 
-    dword readAddress = currentSnapshot;
+    dword readAddress = spBrowser->SelectedSnapshot();
     readAddress = readAddress * 64;
     readAddress = readAddress * 1024;
 
@@ -479,22 +172,16 @@ void loadSnapshot()
 
     byte value = 12;
 
-    Serial.println("READ ADDRES");
-    Serial.println(readAddress);
-
     flash->readData(readAddress, 1, &value);
     readAddress++;
 
-    Serial.println("VALUE");
-    Serial.println(value);
-
     if (value != 0xAA)
     {
-        showMessage("Bad snapshot!");
+        dialog->ShowMessage("Bad snapshot!");
         return;
     }
 
-    showMessage("Loading...", false);
+    dialog->ShowMessage("Loading...", false);
 
     flash->readData(readAddress, 27, (byte*)header);
     readAddress += 255;
@@ -552,12 +239,22 @@ void loadSnapshot()
 
     while (!vramDisabled);
 
-    showMessage("Snapshot loaded");
+    dialog->ShowMessage("Snapshot loaded");
     
 }
 
 void saveSnapshot()
 {
+    while (true)
+    {
+        if (!spBrowser->Show())
+            return;
+
+        if (!spBrowser->IsEmpty())
+            dialog->ShowMessage("Snapshot not empty");
+        else
+            break;
+    }
 
     loadProgram(PROG_SAVE);
 
@@ -565,14 +262,11 @@ void saveSnapshot()
     bool first = true;
     bool isLast = false;
 
-    dword flashAddress = currentSnapshot;
+    dword flashAddress = spBrowser->SelectedSnapshot();
     flashAddress = flashAddress * 64;
     flashAddress = flashAddress * 1024;
 
     dword ramAddress = 16384;
-
-    Serial.println("WRITE SECTOR");
-    Serial.println(flashAddress);
 
     dword segmentLength = min(256, 65536 - ramAddress);
 
@@ -640,21 +334,38 @@ void saveSnapshot()
 
     flash->storeData(flashAddress, segmentLength, (byte*)virtualSegment);
 
-    showMessage("Snapshot Saved");
+    dialog->ShowMessage("Snapshot Saved");
 }
 
-void eraseSnapshot()
+void deleteSnapshot()
 {
-    dword address = currentSnapshot;
+    while (true)
+    {
+        while (true)
+        {
+            if (!spBrowser->Show())
+                return;
+
+            if (spBrowser->IsEmpty())
+                dialog->ShowMessage("Empty snapshot");
+            else
+                break;
+        }
+
+        if (!dialog->ShowConfirm("Erase snapshot?"))
+            break;
+    }
+
+    dword address = spBrowser->SelectedSnapshot();
     address = address * 64;
     address = address * 1024;
 
     bool res = flash->blockErase(address);
 
     if (res)
-        showMessage("Erase completed");
+        dialog->ShowMessage("Erase completed");
     else
-        showMessage("Error erasing");
+        dialog->ShowMessage("Error erasing");
 }
 
 void launchPokeador()
@@ -662,7 +373,7 @@ void launchPokeador()
 
     loadProgram(PROG_POKE);
     
-    showMessage("Pokeando...", false);
+    dialog->ShowMessage("Pokeando...", false);
 
     vramDisabled = false;
 
@@ -675,11 +386,11 @@ void launchPokeador()
 void showBrowser()
 {
     screen->fillScreen(ST7735_BLACK);
-    showMessage("Opening card...", false);
+    dialog->ShowMessage("Opening card...", false);
 
     if (!browser->open())
     {
-        showMessage("Error opening card");
+        dialog->ShowMessage("Error opening card");
         return;
     }
 
@@ -801,8 +512,8 @@ void doBrowserActionUp()
 void doBrowserActionDown()
 {
 
-    if ((browserDots && browserRecordIndex == BROWSER_PAGE_SIZE) ||
-        (!browserDots && browserRecordIndex == BROWSER_PAGE_SIZE - 1))
+    if ((browserDots && browserRecordIndex == browser->CurrentPageSize()) ||
+        (!browserDots && browserRecordIndex == browser->CurrentPageSize() - 1))
     {
         if (!browser->IsLastPage())
         {
@@ -831,9 +542,8 @@ void processFile(SDFile File)
         loadZ80(File);
     else
     {
-        Serial.println(getExt(name));
-        Serial.println(name);
-        showMessage("Not supported");
+
+        dialog->ShowMessage("Not supported");
         File.close();
         return;
     }
@@ -842,7 +552,7 @@ void processFile(SDFile File)
 
 void loadZ80(SDFile File)
 {
-    showMessage("Creating buffer...", false);
+    dialog->ShowMessage("Creating buffer...", false);
 
     memset((byte*)virtualRAM, 0xFF, 4096);
     SDFile buffer = browser->createFile("/tmpz80");
@@ -856,7 +566,7 @@ void loadZ80(SDFile File)
         File.close();
         buffer.close();
         browser->deleteFile("/tmpz80");
-        showMessage("Invalid format");
+        dialog->ShowMessage("Invalid format");
         return;
     }
 
@@ -868,7 +578,7 @@ void loadZ80(SDFile File)
     bool finished = false;
     bool first = true;
 
-    showMessage("Loading...", false);
+    dialog->ShowMessage("Loading...", false);
 
     dword address = 16384;
 
@@ -930,13 +640,13 @@ void loadZ80(SDFile File)
 
     buffer.close();
     browser->deleteFile("/tmpz80");
-    showMessage("Z80 loaded");
+    dialog->ShowMessage("Z80 loaded");
 
 }
 
 bool prepareZ80Buffer(SDFile file, SDFile buffer)
 {
-    showMessage("Preparing buffer...", false);
+    dialog->ShowMessage("Preparing buffer...", false);
 
     int headerLength = 30;
 
@@ -994,10 +704,6 @@ bool prepareZ80Buffer(SDFile file, SDFile buffer)
             dword datalen = toWord(file, i);
             word page = getPage(file.read());
 
-            Serial.println(page);
-
-            Serial.println(datalen);
-
             //if (page == 0xFFFF)
             //    return false;
 
@@ -1030,9 +736,6 @@ word toWord(SDFile file, word offset)
 
 word getPage(byte page)
 {
-    Serial.println("REQUESTED PAGE");
-    Serial.println(page);
-
     switch (page)
     {
     case 4: return 0x8000;
@@ -1109,7 +812,7 @@ void loadSNA(SDFile File)
     bool finished = false;
     bool first = true;
 
-    showMessage("Loading...", false);
+    dialog->ShowMessage("Loading...", false);
 
     dword writeAddress = 16384;
 
@@ -1169,7 +872,7 @@ void loadSNA(SDFile File)
 
     File.close();
 
-    showMessage("Snapshot loaded");
+    dialog->ShowMessage("Snapshot loaded");
 }
 
 const char* getExt(const char* filename) 
@@ -1439,78 +1142,27 @@ void RAMHandler(word Address, byte Operation)
 
 void loop() {
   
-    if (ACTION_SELECTED)
+
+    byte menuSelected = menu->ShowMenu(&mainMenu);
+
+    switch (menuSelected)
     {
-        while (ACTION_SELECTED)
-        {
-            delay(10);
-        }
-
-        switch (appPage)
-        {
-        case INTRO_PAGE:
-
-            appPage = 1;
-            showMenu();
-            break;
-
-        case MAIN_PAGE:
-
-            appPage = systemMenu.currentEntry + 2;
-
-            if (appPage == POKEADOR_PAGE)
-            {
-                launchPokeador();
-                appPage = MAIN_PAGE;
-                showMenu();
-            }
-            else if (appPage == BROWSER_PAGE)
-            {
-                showBrowser();
-                appPage = MAIN_PAGE;
-                showMenu();
-            }
-            else
-                showSnapshotSelector();
-
-            break;
-
-        default:
-
-            if (currentSnapshot == 16)
-            {
-                appPage = 1;
-                showMenu();
-            }
-            else
-                chooseSnapshot();
-
-            break;
-        }
+    case MENU_ENTRY_POKEADOR:
+        launchPokeador();
+        break;
+    case MENU_ENTRY_LOAD:
+        loadSnapshot();
+        break;
+    case MENU_ENTRY_SAVE:
+        saveSnapshot();
+        break;
+    case MENU_ENTRY_DELETE:
+        deleteSnapshot();
+        break;
+    case MENU_ENTRY_BROWSER:
+        showBrowser();
+        break;
     }
-    else if (ACTION_UP)
-    {
-        while (ACTION_UP)
-        {
-            delay(10);
-        }
-        if (appPage == 1)
-            previousOption();
-        else if (appPage > 1)
-            previousSnapshot();
-        
-    }
-    else if (ACTION_DOWN)
-    {
-        while (ACTION_DOWN)
-        {
-            delay(10);
-        }
-        if (appPage == 1)
-            nextOption();
-        else if (appPage > 1)
-            nextSnapshot();
-        
-    }
+
 
 }

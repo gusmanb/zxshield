@@ -13,11 +13,11 @@ typedef struct SDBrowserEntry
 	dword size;
 };
 
-class SDBrowser
+class SDNavigator
 {
 
 public:
-	SDBrowser(byte SDCs, dword Speed, byte PageSize);
+	SDNavigator(byte SDCs, dword Speed, byte PageSize);
 	bool open();
 	bool close();
 	bool nextPage();
