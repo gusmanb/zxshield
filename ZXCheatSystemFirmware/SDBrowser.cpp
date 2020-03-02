@@ -1,328 +1,358 @@
 #include "SDBrowser.h"
 
-SDNavigator::SDNavigator(byte SDCs, dword Speed, byte PageSize)
+SDBrowser::SDBrowser(SDPagedFileSystem* FileSystem, DialogHelper* Dialog, Adafruit_ST7735* Screen, word Width, word Height, word TextSize, byte UpButton, byte DownButton, byte SelectButton)
 {
-	pageSize = PageSize;
-	mCspin = SDCs;
-	speed = Speed;
+    maxEntries = (Height - 16) / (TXT_H * TextSize);
+    lineWidth = (Width - 8) / (TXT_W * TextSize);
 
-	page = (SDBrowserEntry*)malloc(sizeof(SDBrowserEntry) * PageSize);
-
-	pinMode(mCspin, OUTPUT);
-	digitalWrite(mCspin, HIGH);
+    fileSystem = FileSystem;
+    fileSystem->SetPageSize(maxEntries);
+    dialog = Dialog;
+    screen = Screen;
+    scrW = Width;
+    scrH = Height;
+    txtScale = TextSize;
+    upBtn = UpButton;
+    downBtn = DownButton;
+    selBtn = SelectButton;
 }
 
-bool SDNavigator::open()
+SDFile SDBrowser::Show(FileSelectedCallback Callback, const char* AllowedExtensions[], int ExtensionCount)
 {
-	if (isOpen)
-		return false;
+    screen->fillScreen(ST7735_BLACK);
+    dialog->ShowMessage("Opening card...", false);
 
-	isOpen = SD.begin(speed, mCspin);
+    if (!fileSystem->open())
+    {
+        dialog->ShowMessage("Error opening card");
+        fileSystem->close();
+        return SDFile();
+    }
 
-	if (isOpen)
-		openRoot();
+    recordIndex = 0;
 
-	return isOpen;
+    showCurrentBrowserPage();
+
+    while (true)
+    {
+        if (ACT_SELECTED)
+        {
+            while (ACT_SELECTED)
+            {
+                if (ACT_DOWN)
+                {
+                    while (ACT_DOWN || ACT_SELECTED);
+                    return SDFile();
+                }
+            }
+
+            if (hasDots)
+                recordIndex--;
+
+            if (recordIndex == -1)
+            {
+                fileSystem->parentFolder();
+                recordIndex = 0;
+                showCurrentBrowserPage();
+            }
+            else
+            {
+                if (fileSystem->Page()[recordIndex].isDir)
+                {
+                    fileSystem->openFolder(recordIndex);
+                    recordIndex = 0;
+                    showCurrentBrowserPage();
+                }
+                else
+                {
+
+                    if (!extensionAllowed(fileSystem->Page()[recordIndex].name, AllowedExtensions, ExtensionCount))
+                    {
+                        dialog->ShowMessage("Invalid file");
+                        showCurrentBrowserPage();
+                    }
+                    else
+                    {
+                        SDFile selectedFile = fileSystem->openFile(recordIndex);
+                        Callback(selectedFile);
+                        recordIndex = 0;
+                        fileSystem->close();
+                        return;
+                    }
+                }
+            }
+        }
+        else if (ACT_UP)
+        {
+            int delayup = 0;
+            int waitDelay = 1000;
+
+            while (ACT_UP)
+            {
+                delay(50);
+                delayup += 50;
+
+                if (delayup >= waitDelay)
+                {
+                    doBrowserActionUp();
+                    waitDelay = 50;
+                    delayup = 0;
+                }
+            }
+
+            if (waitDelay == 1000)
+                doBrowserActionUp();
+
+        }
+        else if (ACT_DOWN)
+        {
+            int delaydown = 0;
+            int waitDelay = 1000;
+
+            while (ACT_DOWN)
+            {
+                delay(50);
+                delaydown += 50;
+
+                if (delaydown >= waitDelay)
+                {
+                    doBrowserActionDown();
+                    waitDelay = 50;
+                    delaydown = 0;
+                }
+            }
+
+            if (waitDelay == 1000)
+                doBrowserActionDown();
+
+        }
+    }
 }
 
-bool SDNavigator::close()
+void SDBrowser::doBrowserActionUp()
 {
-	if (!isOpen)
-		return false;
+    if (recordIndex == 0)
+    {
+        if (!fileSystem->IsFirstPage())
+        {
+            fileSystem->previousPage();
 
-	currentEntry.close();
-	SD.end();
-	isOpen = false;
+            if (fileSystem->IsFirstPage() && !fileSystem->IsRoot())
+                recordIndex = maxEntries;
+            else
+                recordIndex = maxEntries - 1;
 
-	pinMode(mCspin, OUTPUT);
-	digitalWrite(mCspin, HIGH);
-
-	return true;
+            showCurrentBrowserPage();
+        }
+    }
+    else
+    {
+        deselectBrowserEntry();
+        recordIndex--;
+        selectedBroswserEntry();
+    }
 }
 
-bool SDNavigator::nextPage()
+void SDBrowser::doBrowserActionDown()
 {
-	if (!isOpen)
-		return false;
 
-	if (page[pageSize - 1].name[0] == 0)
-		return false;
+    if ((hasDots && recordIndex == fileSystem->CurrentPageSize()) ||
+        (!hasDots && recordIndex == fileSystem->CurrentPageSize() - 1))
+    {
+        if (!fileSystem->IsLastPage())
+        {
+            recordIndex = 0;
+            fileSystem->nextPage();
+            showCurrentBrowserPage();
+        }
+    }
+    else
+    {
+        deselectBrowserEntry();
+        recordIndex++;
+        selectedBroswserEntry();
 
-	SDFile file = currentEntry.openNextFile();
+    }
 
-	if (!file)
-		return false;
-
-	memset(page, 0, sizeof(SDBrowserEntry) * pageSize);
-
-	currentPageSize = 0;
-
-	for (int buc = 0; buc < pageSize; buc++)
-	{
-		if (!file)
-			break;
-
-		currentPageSize++;
-
-		memcpy(page[buc].name, file.name(), 12);
-		page[buc].isDir = file.isDirectory();
-		page[buc].size = file.size();
-		file.close();
-
-		file = currentEntry.openNextFile();
-	}
-
-	if (file)
-		file.close();
-
-	pageStartIndex += pageSize;
-
-	return true;
 }
 
-bool SDNavigator::previousPage()
+void SDBrowser::showCurrentBrowserPage()
 {
-	if (!isOpen || pageStartIndex == 0)
-		return false;
 
-	if (page[pageSize - 1].name[0] == 0)
-		return false;
+    screen->fillScreen(ST7735_BLUE);
+    screen->drawRect(0, 0, scrW, scrH, ST7735_CYAN);
+    screen->drawRect(2, 2, scrW - 4, scrH - 4, ST7735_CYAN);
 
-	currentEntry.rewindDirectory();
+    word x = 4;
+    word y = 4;
 
-	pageStartIndex -= pageSize;
+    screen->setTextColor(ST7735_CYAN, ST7735_BLUE);
+    screen->setCursor(x, y);
 
-	SDFile file;
+    if (fileSystem->IsFirstPage() && !fileSystem->IsRoot())
+    {
+        hasDots = true;
+        screen->println("...");
+    }
+    else
+        hasDots = false;
 
-	for (int buc = 0; buc < pageStartIndex; buc++)
-	{
-		file = currentEntry.openNextFile();
-		file.close();
-	}
+    const SDEntry* page = fileSystem->Page();
 
-	memset(page, 0, sizeof(SDBrowserEntry) * pageSize);
+    currentPageSize = 0;
 
-	currentPageSize = 0;
+    for (int buc = 0; buc < maxEntries; buc++)
+    {
+        if (page[buc].name[0] == 0)
+            break;
 
-	for (int buc = 0; buc < pageSize; buc++)
-	{
-		file = currentEntry.openNextFile();
+        y = screen->getCursorY();
+        screen->setCursor(x, y);
+        printBrowserEntry(buc, false);
 
-		if (!file)
-			break;
+        currentPageSize++;
+    }
 
-		currentPageSize++;
-
-		memcpy(page[buc].name, file.name(), 12);
-		page[buc].isDir = file.isDirectory();
-		page[buc].size = file.size();
-		file.close();
-	}
-
-	return true;
+    selectedBroswserEntry();
 }
 
-bool SDNavigator::openRoot()
+void SDBrowser::deselectBrowserEntry()
 {
-	if (!isOpen)
-		return false;
+    screen->fillRect(4, 4 + (recordIndex * 8), scrW - 8, 8, ST7735_BLUE);
+    screen->setCursor(4, 4 + (recordIndex * 8));
 
-	memset(currentPath, 0, 256);
-	strcpy(currentPath, "/");
+    screen->setTextColor(ST7735_CYAN, ST7735_BLUE);
 
-	if (currentEntry)
-		currentEntry.close();
+    char realIndex = recordIndex;
 
-	currentEntry = SD.open("/");
+    if (hasDots)
+        realIndex--;
 
-	pageStartIndex = 0;
-
-	SDFile file;
-
-	memset(page, 0, sizeof(SDBrowserEntry) * pageSize);
-
-	currentPageSize = 0;
-
-	for (int buc = 0; buc < pageSize; buc++)
-	{
-		file = currentEntry.openNextFile();
-
-		if (!file)
-			break;
-
-		currentPageSize++;
-
-		memcpy(page[buc].name, file.name(), 12);
-		page[buc].isDir = file.isDirectory();
-		page[buc].size = file.size();
-		file.close();
-	}
-
-	return true;
+    if (realIndex == -1)
+        screen->println("...");
+    else
+        printBrowserEntry(realIndex, false);
 }
 
-bool SDNavigator::openFolder(byte Index)
+void SDBrowser::selectedBroswserEntry()
 {
-	if (!isOpen || Index >= pageSize)
-		return false;
+    screen->fillRect(4, 4 + (recordIndex * 8), scrW - 8, 8, ST7735_CYAN);
+    screen->setCursor(4, 4 + (recordIndex * 8));
 
-	SDBrowserEntry* entry = &page[Index];
+    screen->setTextColor(ST7735_BLUE, ST7735_CYAN);
 
-	if (!entry->isDir)
-		return false;
+    char realIndex = recordIndex;
 
-	if(strcmp(currentPath, "/"))
-		strcat(currentPath, "/");
+    if (hasDots)
+        realIndex--;
 
-	strcat(currentPath, entry->name);
-
-	if (currentEntry)
-		currentEntry.close();
-
-	currentEntry = SD.open(currentPath);
-
-	memset(page, 0, sizeof(SDBrowserEntry) * pageSize);
-	pageStartIndex = 0;
-
-	SDFile file;
-
-	currentPageSize = 0;
-
-	for (int buc = 0; buc < pageSize; buc++)
-	{
-		file = currentEntry.openNextFile();
-
-		if (!file)
-			break;
-
-		currentPageSize++;
-
-		memcpy(page[buc].name, file.name(), 12);
-		page[buc].isDir = file.isDirectory();
-		page[buc].size = file.size();
-		file.close();
-	}
-
-	return true;
+    if (realIndex == -1)
+        screen->println("...");
+    else
+        printBrowserEntry(realIndex, true);
 }
 
-bool SDNavigator::openFolder(const char* Path)
+void SDBrowser::printBrowserEntry(byte Index, bool Selected)
 {
-	if (!isOpen)
-		return false;
+    if (Selected)
+        screen->setTextColor(ST7735_BLUE, ST7735_CYAN);
+    else
+        screen->setTextColor(ST7735_CYAN, ST7735_BLUE);
 
-	if (currentEntry)
-		currentEntry.close();
+    const SDEntry* page = fileSystem->Page();
 
-	currentEntry = SD.open(Path);
+    char* entry = (char*)malloc(lineWidth + 1);
+    memset(entry, ' ', lineWidth);
+    entry[lineWidth] = 0;
 
-	if (!currentEntry || !currentEntry.isDirectory())
-		return false;
+    int len = strlen(page[Index].name);
+    memcpy(entry, page[Index].name, len);
 
-	memset(currentPath, 0, 256);
-	strcpy(currentPath, Path);
+    if (!page[Index].isDir)
+    {
+        strlwr(entry);
 
-	memset(page, 0, sizeof(SDBrowserEntry) * pageSize);
-	pageStartIndex = 0;
+        char sizeText[7];
+        memset(sizeText, 0, 7);
 
-	SDFile file;
+        dword len = page[Index].size;
 
-	currentPageSize = 0;
+        if (len > (dword)1024 * (dword)1024 * (dword)1024)
+        {
+            double val = (double)len / (1024.0 * 1024.0 * 1024.0);
+            len = round(val);
+            itoa(len, sizeText, 10);
+            len = strlen(sizeText);
+            sizeText[len++] = 'G';
+            sizeText[len++] = 'b';
+            sizeText[len++] = 0;
+            memcpy(&entry[lineWidth - len], sizeText, len);
+        }
+        else if (len > (dword)1024 * (dword)1024)
+        {
+            double val = (double)len / (1024.0 * 1024.0);
+            len = round(val);
+            itoa(len, sizeText, 10);
+            len = strlen(sizeText);
+            sizeText[len++] = 'M';
+            sizeText[len++] = 'b';
+            sizeText[len++] = 0;
+            memcpy(&entry[lineWidth - len], sizeText, len);
 
-	for (int buc = 0; buc < pageSize; buc++)
-	{
-		file = currentEntry.openNextFile();
+        }
+        else if (len > (dword)1024)
+        {
+            double val = (double)len / 1024.0;
+            len = round(val);
+            itoa(len, sizeText, 10);
+            len = strlen(sizeText);
+            sizeText[len++] = 'K';
+            sizeText[len++] = 'b';
+            sizeText[len++] = 0;
+            memcpy(&entry[lineWidth - len], sizeText, len);
+        }
+        else
+        {
+            itoa(len, sizeText, 10);
+            len = strlen(sizeText);
+            sizeText[len++] = 'B';
+            sizeText[len++] = 0;
+            memcpy(&entry[lineWidth - len], sizeText, len);
+        }
 
-		if (!file)
-			break;
+    }
+    else
+    {
+        strupr(entry);
+        entry[lineWidth - 5] = '<';
+        entry[lineWidth - 4] = 'D';
+        entry[lineWidth - 3] = 'I';
+        entry[lineWidth - 2] = 'R';
+        entry[lineWidth - 1] = '>';
+    }
 
-		currentPageSize++;
+    screen->println(entry);
 
-		memcpy(page[buc].name, file.name(), 12);
-		page[buc].isDir = file.isDirectory();
-		page[buc].size = file.size();
-
-		file.close();
-	}
-
-	return true;
+    free(entry);
 }
 
-bool SDNavigator::parentFolder()
+bool SDBrowser::extensionAllowed(const char* fileName, const char* extensions[], int extNumber)
 {
-	if (!isOpen || !strcmp(currentPath, "/"))
-		return false;
+    const char* ext = getExt(fileName);
 
-	char* prev = strrchr(currentPath, '/');
-	*prev = 0;
+    for (int buc = 0; buc < extNumber; buc++)
+        if (!strcasecmp(ext, extensions[buc]))
+            return true;
 
-	memset(page, 0, sizeof(SDBrowserEntry) * pageSize);
-	pageStartIndex = 0;
-
-	if (currentEntry)
-		currentEntry.close();
-
-	currentEntry = SD.open(currentPath);
-
-	SDFile file;
-
-	currentPageSize = 0;
-
-	for (int buc = 0; buc < pageSize; buc++)
-	{
-		file = currentEntry.openNextFile();
-
-		if (!file)
-			break;
-
-		currentPageSize++;
-
-		memcpy(page[buc].name, file.name(), 12);
-		page[buc].isDir = file.isDirectory();
-		page[buc].size = file.size();
-
-		file.close();
-	}
-
-	return true;
+    return false;
 }
 
-SDFile SDNavigator::openFile(byte Index, char* PathOutput = NULL)
+const char* SDBrowser::getExt(const char* filename)
 {
-	if (!isOpen || Index >= pageSize)
-		return SDFile();
+    const char* dot = strrchr(filename, '.');
 
-	if (strcmp(currentPath, "/"))
-		strcat(currentPath, "/");
+    if (!dot || dot == filename)
+        return "";
 
-	word pos = strlen(currentPath);
-
-	if (pos != 1)
-		pos -= 1;
-
-	strcat(currentPath, page[Index].name);
-
-	SDFile file = SD.open(currentPath);
-
-	if (PathOutput != NULL)
-		strcpy(PathOutput, currentPath);
-
-	currentPath[pos] = 0;
-
-	return file;
-}
-
-SDFile SDNavigator::openFile(const char* Path)
-{
-	return SD.open(Path);
-}
-
-SDFile SDNavigator::createFile(const char* Path)
-{
-	return SD.open(Path, O_RDWR | O_CREAT);
-}
-
-bool SDNavigator::deleteFile(const char* Path)
-{
-	return SD.remove(Path);
+    return dot + 1;
 }

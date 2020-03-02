@@ -127,6 +127,7 @@
     <ClInclude Include="MenuSystem.h" />
     <ClInclude Include="PokearProg.h" />
     <ClInclude Include="SDBrowser.h" />
+    <ClInclude Include="SDPagedFileSystem.h" />
     <ClInclude Include="sembei_small.h" />
     <ClInclude Include="SnapshotBrowser.h" />
     <ClInclude Include="Z80Loader.h" />
@@ -136,6 +137,7 @@
     <ClCompile Include="DialogHelper.cpp" />
     <ClCompile Include="MenuSystem.cpp" />
     <ClCompile Include="SDBrowser.cpp" />
+    <ClCompile Include="SDPagedFileSystem.cpp" />
     <ClCompile Include="SnapshotBrowser.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

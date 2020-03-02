@@ -15,11 +15,13 @@
 #include "MenuSystem.h"
 #include "DialogHelper.h"
 #include "SnapshotBrowser.h"
+#include "SDBrowser.h"
 #include "ZXShield.h"
 
 #include "PokearProg.h"
 #include "LoadProg.h"
 #include "DumpProg.h"
+#include "SDPagedFileSystem.h"
 #include "SDBrowser.h"
 #include "Z80Loader.h"
 
@@ -54,8 +56,6 @@
 #define ERASE_SNAPSHOT_PAGE 5
 #define BROWSER_PAGE 6
 
-#define BROWSER_PAGE_SIZE 18
-
 #define RGB_COLOR(r,g,b) (((dword)(r & 0xF8)) << 8 | ((dword)(g & 0xFC)) << 3 | ((dword)(b & 0xF8)) >> 3)
 
 volatile byte* volatile header;			//pointer to SNA header in the virtual RAM
@@ -75,7 +75,8 @@ volatile word exitAddress;
 SR23K* sram;
 S25FL208K* flash;
 Adafruit_ST7735* screen;
-SDNavigator* browser; 
+SDBrowser* browser;
+SDPagedFileSystem* fileSystem;
 
 Menu mainMenu =
 {
@@ -104,6 +105,8 @@ MenuSystem* menu;
 DialogHelper* dialog;
 SnapshotBrowser* spBrowser;
 
+char* extensions[2] = { "sna", "z80" };
+
 // the setup function runs once when you press reset or power the board
 void setup() {
 
@@ -118,30 +121,36 @@ void setup() {
     pinMode(BTN_DOWN, INPUT_PULLUP);
     pinMode(BTN_UP, INPUT_PULLUP);
 
-    browser = new SDNavigator(SD_CS, 8000000, BROWSER_PAGE_SIZE);
-
-    InitScreen();
-
+    fileSystem = new SDPagedFileSystem(SD_CS, 8000000);
     flash = new S25FL208K(&SPI, FLASH_CS, 8000000, 5000);
     sram = new SR23K(&SPI, SRAM_CS, 8000000);
-    
+
+    initScreen();
+
     menu = new MenuSystem(screen, 128, 160, 1, BTN_UP, BTN_DOWN, BTN_SELECT);
     dialog = new DialogHelper(screen, 128, 160, 1, BTN_UP, BTN_DOWN, BTN_SELECT);
+
+    browser = new SDBrowser(fileSystem, dialog, screen, 128, 160, 1, BTN_UP, BTN_DOWN, BTN_SELECT);
     spBrowser = new SnapshotBrowser(flash, screen, 128, 160, 1, BTN_UP, BTN_DOWN, BTN_SELECT);
 
-    
+    showLogo();
 
     delay(2000);
 
 }
 
-void InitScreen()
+void initScreen()
 {
     screen = new Adafruit_ST7735(SCREEN_CS, SCREEN_DC, SCREEN_RS);
     screen->initR();
     screen->fillScreen(ST7735_BLACK);
     uint8_t data = 0xC0;
     screen->sendCommand(ST77XX_MADCTL, &data, 1);
+    
+}
+
+void showLogo()
+{
     screen->drawRGBBitmap(0, 0, sembei_upper, 128, 80);
     screen->drawRGBBitmap(0, 80, sembei_lower, 128, 80);
 }
@@ -383,171 +392,15 @@ void launchPokeador()
 
 }
 
-void showBrowser()
-{
-    screen->fillScreen(ST7735_BLACK);
-    dialog->ShowMessage("Opening card...", false);
-
-    if (!browser->open())
-    {
-        dialog->ShowMessage("Error opening card");
-        return;
-    }
-
-    browserRecordIndex = 0;
-
-    showCurrentBrowserPage();
-
-    while (true)
-    {
-        if (ACTION_SELECTED)
-        {
-            while (ACTION_SELECTED)
-            {
-                if (ACTION_DOWN)
-                {
-                    while (ACTION_DOWN || ACTION_SELECTED);
-                    return;
-                }
-            }
-
-            if (browserDots)
-                browserRecordIndex--;
-
-            if (browserRecordIndex == -1)
-            {
-                browser->parentFolder();
-                browserRecordIndex = 0;
-                showCurrentBrowserPage();
-            }
-            else
-            {
-                if (browser->Page()[browserRecordIndex].isDir)
-                {
-                    browser->openFolder(browserRecordIndex);
-                    browserRecordIndex = 0;
-                    showCurrentBrowserPage();
-                }
-                else
-                {
-                    SDFile selectedFile = browser->openFile(browserRecordIndex);
-                    processFile(selectedFile);
-                    browserRecordIndex = 0;
-                    showCurrentBrowserPage();
-
-                }
-            }
-        }
-        else if (ACTION_UP)
-        {
-            int delayup = 0;
-            int waitDelay = 1000;
-
-            while (ACTION_UP)
-            {
-                delay(50);
-                delayup += 50;
-
-                if (delayup >= waitDelay)
-                {
-                    doBrowserActionUp();
-                    waitDelay = 50;
-                    delayup = 0;
-                }
-            }
-
-            if(waitDelay == 1000)
-                doBrowserActionUp();
-
-        }
-        else if (ACTION_DOWN)
-        {
-            int delaydown = 0;
-            int waitDelay = 1000;
-
-            while (ACTION_DOWN)
-            {
-                delay(50);
-                delaydown += 50;
-
-                if (delaydown >= waitDelay)
-                {
-                    doBrowserActionDown();
-                    waitDelay = 50;
-                    delaydown = 0;
-                }
-            }
-
-            if (waitDelay == 1000)
-                doBrowserActionDown();
-
-        }
-    }
-}
-
-void doBrowserActionUp()
-{
-    if (browserRecordIndex == 0)
-    {
-        if (!browser->IsFirstPage())
-        {
-            browser->previousPage();
-
-            if (browser->IsFirstPage() && !browser->IsRoot())
-                browserRecordIndex = BROWSER_PAGE_SIZE;
-            else
-                browserRecordIndex = BROWSER_PAGE_SIZE - 1;
-
-            showCurrentBrowserPage();
-        }
-    }
-    else
-    {
-        deselectBrowserEntry();
-        browserRecordIndex--;
-        selectedBroswserEntry();
-    }
-}
-
-void doBrowserActionDown()
-{
-
-    if ((browserDots && browserRecordIndex == browser->CurrentPageSize()) ||
-        (!browserDots && browserRecordIndex == browser->CurrentPageSize() - 1))
-    {
-        if (!browser->IsLastPage())
-        {
-            browserRecordIndex = 0;
-            browser->nextPage();
-            showCurrentBrowserPage();
-        }
-    }
-    else
-    {
-        deselectBrowserEntry();
-        browserRecordIndex++;
-        selectedBroswserEntry();
-
-    }
-
-}
-
 void processFile(SDFile File)
 {
+   
     const char* name = File.name();
 
     if (!strcasecmp(getExt(name), "sna"))
         loadSNA(File);
     else if (!strcasecmp(getExt(name), "z80"))
         loadZ80(File);
-    else
-    {
-
-        dialog->ShowMessage("Not supported");
-        File.close();
-        return;
-    }
-
 }
 
 void loadZ80(SDFile File)
@@ -555,7 +408,7 @@ void loadZ80(SDFile File)
     dialog->ShowMessage("Creating buffer...", false);
 
     memset((byte*)virtualRAM, 0xFF, 4096);
-    SDFile buffer = browser->createFile("/tmpz80");
+    SDFile buffer = fileSystem->createFile("/tmpz80");
     buffer.seek(0);
     
     for (int buc = 0; buc < 16; buc++)
@@ -565,7 +418,7 @@ void loadZ80(SDFile File)
     {
         File.close();
         buffer.close();
-        browser->deleteFile("/tmpz80");
+        fileSystem->deleteFile("/tmpz80");
         dialog->ShowMessage("Invalid format");
         return;
     }
@@ -639,7 +492,7 @@ void loadZ80(SDFile File)
     while (!vramDisabled);
 
     buffer.close();
-    browser->deleteFile("/tmpz80");
+    fileSystem->deleteFile("/tmpz80");
     dialog->ShowMessage("Z80 loaded");
 
 }
@@ -880,173 +733,9 @@ const char* getExt(const char* filename)
     const char* dot = strrchr(filename, '.');
 
     if (!dot || dot == filename)
-    {
-        Serial.println(dot);
-
         return "";
-    }
+
     return dot + 1;
-}
-
-void showCurrentBrowserPage()
-{
-    
-    screen->fillScreen(ST7735_BLUE);
-    screen->drawRect(0, 0, 128, 160, ST7735_CYAN);
-    screen->drawRect(2, 2, 124, 156, ST7735_CYAN);
-
-    word x = 4;
-    word y = 4;
-
-    screen->setTextColor(ST7735_CYAN, ST7735_BLUE);
-    screen->setCursor(x, y);
-
-    if (browser->IsFirstPage() && !browser->IsRoot())
-    {
-        browserDots = true;
-        screen->println("...");
-    }
-    else
-        browserDots = false;
-
-    const SDBrowserEntry* page = browser->Page();
-
-    browserCurrentPageSize = 0;
-
-    for (int buc = 0; buc < BROWSER_PAGE_SIZE; buc++)
-    {
-        if (page[buc].name[0] == 0)
-            break;
-
-        y = screen->getCursorY();
-        screen->setCursor(x, y);
-        printBrowserEntry(buc, false);
-        
-        browserCurrentPageSize++;
-    }
-
-    selectedBroswserEntry();
-}
-
-void deselectBrowserEntry()
-{
-    screen->fillRect(4, 4 + (browserRecordIndex * 8), 120, 8, ST7735_BLUE);
-    screen->setCursor(4, 4 + (browserRecordIndex * 8));
-
-    screen->setTextColor(ST7735_CYAN, ST7735_BLUE);
-
-    char realIndex = browserRecordIndex;
-
-    if (browserDots)
-        realIndex--;
-
-    const SDBrowserEntry* page = browser->Page();
-
-    if (realIndex == -1)
-        screen->println("...");
-    else
-        printBrowserEntry(realIndex, false);
-}
-
-void selectedBroswserEntry()
-{
-    screen->fillRect(4, 4 + (browserRecordIndex * 8), 120, 8, ST7735_CYAN);
-    screen->setCursor(4, 4 + (browserRecordIndex * 8));
-
-    screen->setTextColor(ST7735_BLUE, ST7735_CYAN);
-
-    char realIndex = browserRecordIndex;
-
-    if (browserDots)
-        realIndex--;
-
-    const SDBrowserEntry* page = browser->Page();
-
-    if (realIndex == -1)
-        screen->println("...");
-    else
-        printBrowserEntry(realIndex, true);
-}
-
-void printBrowserEntry(byte Index, bool Selected)
-{
-    if(Selected)
-        screen->setTextColor(ST7735_BLUE, ST7735_CYAN);
-    else
-        screen->setTextColor(ST7735_CYAN, ST7735_BLUE);
-
-    const SDBrowserEntry* page = browser->Page();
-
-    char entry[21];
-    memset(entry, ' ', 20);
-    entry[20] = 0;
-
-    int len = strlen(page[Index].name);
-    memcpy(entry, page[Index].name, len);
-
-    if (!page[Index].isDir)
-    {
-        strlwr(entry); 
-
-        char sizeText[7];
-        memset(sizeText, 0, 7);
-        
-        dword len = page[Index].size;
-
-        if (len > (dword)1024 * (dword)1024 * (dword)1024)
-        {
-            double val = (double)len / (1024.0 * 1024.0 * 1024.0);
-            len = round(val);
-            itoa(len, sizeText, 10);
-            len = strlen(sizeText);
-            sizeText[len++] = 'G';
-            sizeText[len++] = 'b';
-            sizeText[len++] = 0;
-            memcpy(&entry[21 - len], sizeText, len);
-        }
-        else if (len > (dword)1024 * (dword)1024)
-        {
-            double val = (double)len / (1024.0 * 1024.0);
-            len = round(val);
-            itoa(len, sizeText, 10);
-            len = strlen(sizeText);
-            sizeText[len++] = 'M';
-            sizeText[len++] = 'b';
-            sizeText[len++] = 0;
-            memcpy(&entry[21 - len], sizeText, len);
-
-        }
-        else if (len > (dword)1024)
-        {
-            double val = (double)len / 1024.0;
-            len = round(val);
-            itoa(len, sizeText, 10);
-            len = strlen(sizeText);
-            sizeText[len++] = 'K';
-            sizeText[len++] = 'b';
-            sizeText[len++] = 0;
-            memcpy(&entry[21 - len], sizeText, len);
-        }
-        else
-        {
-            itoa(len, sizeText, 10);
-            len = strlen(sizeText);
-            sizeText[len++] = 'B';
-            sizeText[len++] = 0;
-            memcpy(&entry[21 - len], sizeText, len);
-        }
-    }
-    else
-    {
-        strupr(entry);
-        entry[15] = '<';
-        entry[16] = 'D';
-        entry[17] = 'I';
-        entry[18] = 'R';
-        entry[19] = '>';        
-    }
-
-    screen->println(entry);
 }
 
 void loadProgram(byte program)
@@ -1140,9 +829,9 @@ void RAMHandler(word Address, byte Operation)
     }
 }
 
-void loop() {
+void loop() 
+{
   
-
     byte menuSelected = menu->ShowMenu(&mainMenu);
 
     switch (menuSelected)
@@ -1160,7 +849,7 @@ void loop() {
         deleteSnapshot();
         break;
     case MENU_ENTRY_BROWSER:
-        showBrowser();
+        browser->Show(processFile, extensions, 2);
         break;
     }
 

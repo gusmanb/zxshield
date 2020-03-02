@@ -1,55 +1,48 @@
 #pragma once
+#include "Arduino.h"
+#include <Adafruit_ST7735.h>
+#include "DialogHelper.h"
+#include "SDPagedFileSystem.h"
 
-#include <Arduino.h>
-#include <SD.h>
-#include <SPI.h>
+typedef void (*FileSelectedCallback)(SDFile File);
 
-typedef unsigned long dword;
+#define ACT_SELECTED  (!digitalRead(selBtn))
+#define ACT_UP       (!digitalRead(upBtn))
+#define ACT_DOWN     (!digitalRead(downBtn))
 
-typedef struct SDBrowserEntry
+#define TXT_W 6
+#define TXT_H 8
+
+class SDBrowser
 {
-	bool isDir;
-	char name[13];
-	dword size;
-};
-
-class SDNavigator
-{
-
 public:
-	SDNavigator(byte SDCs, dword Speed, byte PageSize);
-	bool open();
-	bool close();
-	bool nextPage();
-	bool previousPage();
-	bool openRoot();
-	bool openFolder(byte Index);
-	bool openFolder(const char* Path);
-	bool parentFolder();
-	SDFile openFile(byte Index, char* PathOutput = NULL);
-	SDFile openFile(const char* Path);
-	SDFile createFile(const char* Path);
-	bool deleteFile(const char* Path);
-
-	const SDBrowserEntry* Page() const { return page; }
-	byte PageSize() const { return pageSize; }
-	byte CurrentPageSize() const { return currentPageSize; }
-	const char* CurrentPath() const { return currentPath;  }
-	const char* CurrentFolder() const { return currentEntry.name(); }
-	bool IsFirstPage() { return pageStartIndex == 0; }
-	bool IsLastPage() { return page[pageSize-1].name[0] == 0; }
-	bool IsRoot() { return !strcmp(currentPath, "/"); }
-
+	SDBrowser(SDPagedFileSystem* FileSystem, DialogHelper* Dialog, Adafruit_ST7735* Screen,word Width, word Height, word TextSize, byte UpButton, byte DownButton, byte SelectButton);
+	SDFile Show(FileSelectedCallback Callback, const char* AllowedExtensions[], int ExtensionCount);
 private:
-	word pageStartIndex = 0;
-	char currentPath[256];
-	SDFile currentEntry;
-	bool isOpen = false;
-	byte pageSize = 0;
-	byte currentPageSize = 0;
-	SDBrowserEntry* page;
-	byte mCspin;
-	dword speed;
+	void doBrowserActionUp();
+	void doBrowserActionDown();
+	void showCurrentBrowserPage();
+	void deselectBrowserEntry();
+	void selectedBroswserEntry();
+	void printBrowserEntry(byte Index, bool Selected);
+	bool extensionAllowed(const char* fileName, const char* extensions[], int extNumber);
+	const char* getExt(const char* filename);
 
+	Adafruit_ST7735* screen;
+	DialogHelper* dialog;
+	SDPagedFileSystem* fileSystem;
+	word scrW;
+	word scrH;
+	word txtScale;
+	byte upBtn;
+	byte downBtn;
+	byte selBtn;
+	byte currentSnapshot;
+	byte maxEntries;
+	byte lineWidth;
+
+	char recordIndex = 0;
+	byte currentPageSize = 0;
+	bool hasDots = false;
 };
 
