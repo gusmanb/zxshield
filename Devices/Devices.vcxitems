@@ -22,6 +22,7 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)MCP42XXX.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)S25FL208K.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)SR23K.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)VS1053MIDI.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(MSBuildThisFileDirectory)ESP01.h" />
@@ -29,5 +30,6 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)MCP42XXX.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)S25FL208K.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)SR23K.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)VS1053MIDI.h" />
   </ItemGroup>
 </Project>

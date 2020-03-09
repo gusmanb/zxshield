@@ -211,6 +211,7 @@ void ZXPeripheral::ActivateRegister(byte RegNumber)
 	if (RegNumber > MAX_REGISTER_COUNT)
 		return;
 
+	currentRegisterId = RegNumber;
 	CurrentRegister = Registers[RegNumber];
 
 	switch (CONFIG_TYPE(CurrentRegister->Config))

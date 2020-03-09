@@ -1,0 +1,190 @@
+﻿#include <input.bas>
+
+    out 241,16
+    out 245,1
+
+dim m(0 TO 127) as String
+dim r as Integer = 0
+dim currentM as Integer = 0
+dim buc as Integer
+dim sv as string
+dim posX as integer
+
+mainLoop:
+cls
+print "Cadena"
+dim sT as String = input(64)
+
+if sT = "play" then 
+    play()
+else if sT = "reset" then
+
+    out 241,16
+    out 245,1
+    r = 0
+
+else if sT = "delete" then
+
+    print "Delete current line?"
+    if input(1) = "y" then
+        if currentM > 0 then currentM = currentM - 1
+        m(currentM) = ""
+    end if
+
+else if sT = "erase" then
+
+    print "Erase song?"
+    if input(1) = "y" then
+        currentM = 0
+        for buc = 0 to 127
+            m(buc) = ""
+        next buc
+   end if
+
+else if len sT > 6 and sT(0 to 4) = "edit " then
+
+    sv = ""
+    posX = 5
+    while sT(posX) <> " " AND posX < len sT
+        sv = sv + sT(posX)
+        posX = posX + 1
+    end while
+    posX = posX + 1
+ 
+    print "Replace line "; sv ; "?"
+
+    if input(1) = "y" then m(val(sv)) = sT(posX to)
+
+else if len sT > 7 and sT(0 to 6) = "cursor " then
+
+    sv = ""
+    posX = 7
+    while sT(posX) <> " " AND posX < len sT
+        sv = sv + sT(posX)
+        posX = posX + 1
+    end while
+    posX = posX + 1
+ 
+    print "Cursor at line "; sv ; "?"
+
+    if input(1) = "y" then currentM = val(sv)
+
+else if sT = "sample"
+
+'    m(0) = "T190M00P009M01P041O43"
+'    m(1) = "M00cM01cM00cM01cM00eM01eM00gM01gM00gM01gM00.M01."
+'    m(2) = "M00GM01GM00GM01GM00.M01.M00EM01EM00EM01EM00.M01."
+'    m(3) = "M00cM01cM00cM01cM00eM01eM00gM01gM00gM01gM00.M01."
+'    m(4) = "M00GM01GM00GM01GM00.M01.M00FM01FM00FM01FM00.M01."
+'    m(5) = "O3M00bM01bM00bM01bM00DM01DM00AM01AM00AM01AM00.M01."
+'    m(6) = "O4M00AM01AM00AM01AM00.M01.M00FM01FM00FM01FM00.M01."
+'    m(7) = "O3M00bM01bM00bM01bM00DM01DM00AM01AM00AM01AM00.M01."
+'    m(8) = "O4M00AM01AM00AM01AM00.M01.M00EM01EM00EM01EM00.M01."
+'    m(9) = "O4M00cM01cM00cM01cM00eM01eM00gM01gM00CM01CM00.M01."
+'    m(10) = "O5M00CM01CM00CM01CM00.M01.M00gM01gM00gM01gM00.M01."
+'    m(11) = "O4M00cM01cM00cM01cM00eM01eM00gM01gM00CM01CM00.M01."
+'    m(12) = "O5M00CM01CM00CM01CM00.M01.M00aM01aM00aM01aM00.M01."
+'    m(13) = "O4M00dM01dM00dM01dM00fM01fM00aM01a5M00aM01a"
+'    m(14) = "3M00#fM01#fM00gM01g5M00EM01E"
+'    m(15) = "3M00CM01CM00eM01e2M00.M01."
+'    m(16) = "M00dM01d3M00dM01dM00aM01a2M00.M01."
+'    m(17) = "M00gM01g3M00gM01gM00cM01c2M00.M01.M00cM01c3M00cM01c"
+'    currentM = 18
+
+'ch0 = violin, ch1=viola, ch2=cello, ch3=tremolo, ch4=glockenspiel
+'grp0 = 0,2-,3 (violin, cello, tremolo)
+'grp1 = 1,4 (viola, glockenspiel)
+'grp2 = 0,1,2-,3,4 (violin, viola, cello, tremolo, glockenspiel)
+
+    m(0)="T2003"
+    m(1)="M00P040M01P041M02P042M03P044M04P008"
+    m(2)="n0300002-030"
+    m(3)="n12010040"
+    m(4)="n2500001002-030040"
+    m(5)="N0cceg4g3N1GG.EE."
+    m(6)="N0cceg4g3N1GG.FF."
+    m(7)="N0O3bbDA4A3N1O4AA.FF."
+    m(8)="N0O3bbDA4A3N1O4AA.EE."
+    m(9)="N0cceg4C3N1O5CC.gg."
+    m(10)="N0O4cceg4C3N1O5CC.aa."
+    m(11)="N2O4ddfa5a3"
+    m(12)="#fg5E3"
+    m(13)="Cee2.d3da2."
+    m(14)="g3gc2.c3c"
+    currentM = 15
+
+else if sT = "list" then
+
+   for buc = 0 to 127
+      if m(buc) = "" then exit for
+      print m(buc)
+   next buc
+   pause 0
+   pause 0
+
+else
+
+    m(currentM) = sT
+    currentM = currentM + 1
+    
+    if currentM > 127 then 
+        currentM = 127
+        print "full"
+        pause 0
+    end if
+
+end if
+
+goto mainLoop
+
+SUB play()
+
+    pause 10
+
+    for buc = 0 to 127
+
+        'print "load string"
+
+        'pause 0
+
+        dim seq as String = m(buc)
+
+        if len seq = 0 then exit for
+
+        'print "sel canal "; buc
+      
+        'pause 0
+
+        out 241,r
+
+        'print "in loop"
+
+        'pause 0
+
+        while (IN 243) = 250
+            pause 1
+        end while
+
+        'print "set len "; len(seq)
+
+        'pause 0
+
+        out 243, len(seq)
+    
+        dim buc as Integer
+
+        'print "out string"
+
+        'pause 0
+
+        for buc = 0 to len(seq) - 1
+            out 245, code(seq(buc to buc))
+        next buc
+
+        r = r + 1
+
+        if(r > 15) then r = 0
+
+    next buc 
+
+END SUB

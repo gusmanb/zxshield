@@ -361,7 +361,7 @@ void deleteSnapshot()
                 break;
         }
 
-        if (!dialog->ShowConfirm("Erase snapshot?"))
+        if (dialog->ShowConfirm("Erase snapshot?"))
             break;
     }
 

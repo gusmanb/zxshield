@@ -113,13 +113,14 @@ public:
 	static void LockRegister(PREGISTER Register);
 	static void UnlockRegister(PREGISTER Register);
 
+	volatile byte CurrentRegisterId() {		return currentRegisterId; }
 private:
 	volatile PREGISTER Registers[MAX_REGISTER_COUNT];
 	volatile PREGISTER CurrentRegister = NULL;
 	volatile PBYTE_REGISTER CurrentByte = NULL;
 	volatile PINT_REGISTER CurrentInt = NULL;
 	volatile PSTREAM_REGISTER CurrentStream = NULL;
-
+	volatile uint8_t currentRegisterId;
 	volatile uint8_t* releasePort;
 	uint8_t retainBit;
 	uint8_t releaseBit;
