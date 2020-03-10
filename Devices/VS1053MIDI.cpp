@@ -1,26 +1,12 @@
 #include "VS1053MIDI.h"
 
 //// Plugin to put VS10XX into realtime MIDI mode
-//const unsigned short sVS1053b_Realtime_MIDI_Plugin[28] = { /* Compressed plugin */
-//  0x0007, 0x0001, 0x8050, 0x0006, 0x0014, 0x0030, 0x0715, 0xb080, /*    0 */
-//  0x3400, 0x0007, 0x9255, 0x3d00, 0x0024, 0x0030, 0x0295, 0x6890, /*    8 */
-//  0x3400, 0x0030, 0x0495, 0x3d00, 0x0024, 0x2908, 0x4d40, 0x0030, /*   10 */
-//  0x0200, 0x000a, 0x0001, 0x0050,
-//};
-
-//void VSLoadUserCode(void) {
-//    int i = 0;
-//
-//    while (i < sizeof(sVS1053b_Realtime_MIDI_Plugin) / sizeof(sVS1053b_Realtime_MIDI_Plugin[0])) {
-//        unsigned short addr, n, val;
-//        addr = sVS1053b_Realtime_MIDI_Plugin[i++];
-//        n = sVS1053b_Realtime_MIDI_Plugin[i++];
-//        while (n--) {
-//            val = sVS1053b_Realtime_MIDI_Plugin[i++];
-//            WriteSCIRegister(addr, val);
-//        }
-//    }
-//}
+const unsigned short sVS1053b_Realtime_MIDI_Plugin[28] = { /* Compressed plugin */
+  0x0007, 0x0001, 0x8050, 0x0006, 0x0014, 0x0030, 0x0715, 0xb080, /*    0 */
+  0x3400, 0x0007, 0x9255, 0x3d00, 0x0024, 0x0030, 0x0295, 0x6890, /*    8 */
+  0x3400, 0x0030, 0x0495, 0x3d00, 0x0024, 0x2908, 0x4d40, 0x0030, /*   10 */
+  0x0200, 0x000a, 0x0001, 0x0050,
+};
 
 SPISettings vsSettings(245000, MSBFIRST, SPI_MODE0);
 
@@ -37,14 +23,19 @@ VS1053MIDI::VS1053MIDI(byte CS, byte XCS, byte XRESET, byte XDCS, byte DREQ, byt
     pinMode(XCS, OUTPUT);
     pinMode(XRESET, OUTPUT);
     pinMode(XDCS, OUTPUT);
-    pinMode(RTL, OUTPUT);
+
+    if(rtl != 0xFF)
+        pinMode(RTL, OUTPUT);
+
     pinMode(DREQ, INPUT);
 
     digitalWrite(CS, 1);
     digitalWrite(XCS, 1);
     digitalWrite(XDCS, 1);
     digitalWrite(XRESET, 0);
-    digitalWrite(RTL, 1);
+
+    if (rtl != 0xFF)
+        digitalWrite(RTL, 1);
 
     SPI.begin();
     SPI.usingInterrupt(255);
@@ -53,7 +44,10 @@ VS1053MIDI::VS1053MIDI(byte CS, byte XCS, byte XRESET, byte XDCS, byte DREQ, byt
 
     digitalWrite(XRESET, 1);
 
-    delay(10);
+    delay(50);
+
+    if (rtl == 0xFF)
+        MIDIModeSoft();
 }
 
 void VS1053MIDI::NoteOn(byte Channel, byte Note, byte Velocity)
@@ -196,5 +190,22 @@ void VS1053MIDI::Reset()
     digitalWrite(xreset, 0);
     delay(10);
     digitalWrite(xreset, 1);
-    delay(10);
+    delay(50);
+
+    if (rtl == 0xFF)
+        MIDIModeSoft();
+}
+
+void VS1053MIDI::MIDIModeSoft(void) {
+    int i = 0;
+
+    while (i < sizeof(sVS1053b_Realtime_MIDI_Plugin) / sizeof(sVS1053b_Realtime_MIDI_Plugin[0])) {
+        unsigned short addr, n, val;
+        addr = sVS1053b_Realtime_MIDI_Plugin[i++];
+        n = sVS1053b_Realtime_MIDI_Plugin[i++];
+        while (n--) {
+            val = sVS1053b_Realtime_MIDI_Plugin[i++];
+            WriteSCIRegister(addr, val);
+        }
+    }
 }

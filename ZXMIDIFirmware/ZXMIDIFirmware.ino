@@ -41,7 +41,7 @@ typedef struct _channelGroup
 
 }channelGroup, *PchannelGroup;
 
-volatile PREGISTER regStatus[16];
+volatile PREGISTER regData[16];
 volatile PREGISTER regError;
 
 VS1053MIDI* midi;
@@ -54,6 +54,8 @@ volatile byte currentChannel;
 volatile byte currentOctave;
 volatile byte noteDuration;
 volatile byte offset;
+volatile byte currentOnVelocity;
+volatile byte currentOffVelocity;
 
 volatile playingNote channelNotes[16];
 
@@ -87,7 +89,7 @@ void setup()
     Serial.begin(115200);
 
     memset((void*)channelNotes, 0, sizeof(playingNote) * 16);
-    memset((void*)regStatus, 0, sizeof(PREGISTER) * 16);
+    memset((void*)regData, 0, sizeof(PREGISTER) * 16);
     groupEnabled = false;
     currentGroup = 0;
     bpm = 60;
@@ -112,7 +114,7 @@ void setup()
 
     for (int buc = 0; buc < 16; buc++)
     {
-        regStatus[buc] = NULL;
+        regData[buc] = NULL;
         ZXShield::Peripheral.CreateRegister(buc, STREAM_R, true, true, NULL, NULL, NULL, NULL, bufferWritten);
     }
 
@@ -150,7 +152,7 @@ void setup()
 void bufferWritten(PREGISTER Register)
 {
     ZXPeripheral::LockRegister(Register);
-    regStatus[ZXShield::Peripheral.CurrentRegisterId()] = Register;
+    regData[ZXShield::Peripheral.CurrentRegisterId()] = Register;
 }
 
 void currentRegRead(PREGISTER Register)
@@ -178,7 +180,7 @@ void changeMode(PREGISTER Register)
             PREGISTER reg = ZXShield::Peripheral.GetRegister(buc);
             ZXPeripheral::SetStreamValue(reg, "                                                                \0");
             ZXPeripheral::UnlockRegister(reg);
-            regStatus[buc] = NULL;
+            regData[buc] = NULL;
             channelNotes[buc].playing = false;
         }
 
@@ -188,6 +190,8 @@ void changeMode(PREGISTER Register)
         currentChannel = 0;
         offset = 0;
         currentOctave = 4;
+        currentOnVelocity = 127;
+        currentOffVelocity = 64;
         noteDuration = 16;
         groupEnabled = false;
         currentGroup = 0;
@@ -197,8 +201,6 @@ void changeMode(PREGISTER Register)
         midi->Reset();
         enableTimer();
 
-
-
     }
     else
     {
@@ -207,7 +209,7 @@ void changeMode(PREGISTER Register)
             PREGISTER reg = ZXShield::Peripheral.GetRegister(buc);
             ZXPeripheral::SetStreamValue(reg, "    \0");
             ZXPeripheral::UnlockRegister(reg);
-            regStatus[buc] = NULL;
+            regData[buc] = NULL;
             channelNotes[buc].playing = false;
         }
 
@@ -284,15 +286,15 @@ void playStream()
                 channelNotes[buc].playing = false;
                 
                 if(channelNotes[buc].note != 0)
-                    midi->NoteOff(buc, channelNotes[buc].note, 64);
+                    midi->NoteOff(buc, channelNotes[buc].note, currentOffVelocity);
             }
         }
     }
 
-    if (regStatus[currentSequence] != NULL)
+    if (regData[currentSequence] != NULL)
     {
 
-        PREGISTER reg = regStatus[currentSequence];
+        PREGISTER reg = regData[currentSequence];
 
         PSTREAM_REGISTER sr = (PSTREAM_REGISTER)reg->Data;
 
@@ -347,14 +349,14 @@ void playStream()
                             //WriteString("Channel n.");
                             //WriteNumber(buc);
                             byte noteH = ((currentOctave + grp->channels[buc].octaveOffset) - 1) * OCTAVE_LENGTH + noteNumbers[sr->Buffer[posInSequence] - 'a'] + offset;
-                            
+
                             volatile playingNote* note = &channelNotes[grp->channels[buc].channelNumber];
 
                             note->playing = true;
                             note->note = noteH;
                             note->sixteenthsLeft = noteDuration;
 
-                            midi->NoteOn(grp->channels[buc].channelNumber, noteH, 127);
+                            midi->NoteOn(grp->channels[buc].channelNumber, noteH, currentOnVelocity);
                         }
 
                         offset = 0;
@@ -414,7 +416,7 @@ void playStream()
                             note->note = noteH;
                             note->sixteenthsLeft = noteDuration;
 
-                            midi->NoteOn(grp->channels[buc].channelNumber, noteH, 127);
+                            midi->NoteOn(grp->channels[buc].channelNumber, noteH, currentOnVelocity);
                         }
 
                         offset = 0;
@@ -550,6 +552,22 @@ void playStream()
                     //WriteNumber(currentGroup);
                 }
             }
+            else if (value == 'O')
+            {
+                //WriteString("Octave");
+                if (posInSequence + 1 >= sr->BufferLength)
+                {
+                    //WriteString("Buffer too short");
+                    ZXPeripheral::SetByteValue(regError, 3);
+                    sequenceError = true;
+                    canExecute = false;
+                }
+                else
+                {
+                    currentOctave = (sr->Buffer[posInSequence + 1] - '0');
+                    posInSequence += 2;
+                }
+            }
             else if (value == 'P')
             {
                 //WriteString("Patch");
@@ -566,25 +584,20 @@ void playStream()
                     byte patch = (sr->Buffer[posInSequence + 1] - '0') * 100 + (sr->Buffer[posInSequence + 2] - '0') * 10 + (sr->Buffer[posInSequence + 3] - '0');
 
                     if (patch < 128)
-                        midi->Patch(currentChannel, patch);
+                    {
+                        if (groupEnabled)
+                        {
+                            volatile channelGroup* grp = &groups[currentChannel];
 
+                            for (int buc = 0; buc < grp->channelCount; buc++)
+                                midi->Patch(grp->channels[buc].channelNumber, patch);
+                        }
+                        else
+                            midi->Patch(currentChannel, patch);
+
+                        
+                    }
                     posInSequence += 4;
-                }
-            }
-            else if (value == 'O')
-            {
-                //WriteString("Octave");
-                if (posInSequence + 1 >= sr->BufferLength)
-                {
-                    //WriteString("Buffer too short");
-                    ZXPeripheral::SetByteValue(regError, 3);
-                    sequenceError = true;
-                    canExecute = false;
-                }
-                else
-                {
-                    currentOctave = (sr->Buffer[posInSequence + 1] - '0');
-                    posInSequence += 2;
                 }
             }
             else if (value == 'V')
@@ -602,11 +615,50 @@ void playStream()
                     byte vol = (sr->Buffer[posInSequence + 1] - '0') * 100 + (sr->Buffer[posInSequence + 2] - '0') * 10 + (sr->Buffer[posInSequence + 3] - '0');
 
                     if (vol < 128)
-                        midi->VolumeController(currentChannel, vol);
+                    {
+                        if (groupEnabled)
+                        {
+                            volatile channelGroup *grp = &groups[currentChannel];
 
+                            for(int buc = 0; buc < grp->channelCount; buc++)
+                                midi->VolumeController(grp->channels[buc].channelNumber, vol);
+                        }
+                        else
+                            midi->VolumeController(currentChannel, vol);
+                    }
                     posInSequence += 4;
                 }
 
+            }
+            else if (value == '@')
+            {
+                //WriteString("Volume");
+                if (posInSequence + 5 >= sr->BufferLength)
+                {
+                    //WriteString("Buffer too short");
+                    ZXPeripheral::SetByteValue(regError, 4);
+                    sequenceError = true;
+                    canExecute = false;
+                }
+                else
+                {
+                    byte cont = (sr->Buffer[posInSequence + 1] - '0') * 10 + (sr->Buffer[posInSequence + 2] - '0');
+                    byte val = (sr->Buffer[posInSequence + 3] - '0') * 100 + (sr->Buffer[posInSequence + 4] - '0') * 10 + (sr->Buffer[posInSequence + 5] - '0');
+
+                    if (val < 128)
+                    {
+                        if (groupEnabled)
+                        {
+                            volatile channelGroup* grp = &groups[currentChannel];
+
+                            for (int buc = 0; buc < grp->channelCount; buc++)
+                                midi->OtherController(grp->channels[buc].channelNumber, cont, val);
+                        }
+                        else
+                            midi->OtherController(currentChannel, cont, val);
+                    }
+                    posInSequence += 6;
+                }
             }
             else if (value == 'T')
             {
@@ -631,10 +683,47 @@ void playStream()
                     posInSequence += 4;
                 }
             }
+            else if (value == '>') 
+            {
+                if (posInSequence + 3 >= sr->BufferLength)
+                {
+                    //WriteString("Buffer too short");
+                    ZXPeripheral::SetByteValue(regError, 4);
+                    sequenceError = true;
+                    canExecute = false;
+                }
+                else
+                {
+                    byte offv = (sr->Buffer[posInSequence + 1] - '0') * 100 + (sr->Buffer[posInSequence + 2] - '0') * 10 + (sr->Buffer[posInSequence + 3] - '0');
+
+                    if (offv < 128)
+                        currentOffVelocity = offv;
+
+                    posInSequence += 4;
+                }
+            }
+            else if (value == '<') 
+            {
+                if (posInSequence + 3 >= sr->BufferLength)
+                {
+                    //WriteString("Buffer too short");
+                    ZXPeripheral::SetByteValue(regError, 4);
+                    sequenceError = true;
+                    canExecute = false;
+                }
+                else
+                {
+                    byte onv = (sr->Buffer[posInSequence + 1] - '0') * 100 + (sr->Buffer[posInSequence + 2] - '0') * 10 + (sr->Buffer[posInSequence + 3] - '0');
+
+                    if (onv < 128)
+                        currentOnVelocity = onv;
+
+                    posInSequence += 4;
+                }
+            }
             else if (value == 'n') //Configure group
             {
                 //n(num)(gr0_chan)(gr0_o_offset)...(grn_chan)(grn_o_offset)
-
 
                 byte groupNum;
                 byte chanCount;
@@ -642,7 +731,6 @@ void playStream()
                 if (posInSequence + 2 >= sr->BufferLength)
                 {
                     ZXPeripheral::SetByteValue(regError, 6);
-                    //WriteString("Buffer too short");
                     sequenceError = true;
                     canExecute = false;
                 }
@@ -650,15 +738,9 @@ void playStream()
                 groupNum = (sr->Buffer[posInSequence + 1] - '0');
                 chanCount = (sr->Buffer[posInSequence + 2] - '0');
 
-                //WriteString("Create group");
-                //WriteNumber(groupNum);
-                //WriteString("Channels");
-                //WriteNumber(chanCount);
-
                 if (posInSequence + 2 + (chanCount * 3) >= sr->BufferLength)
                 {
                     ZXPeripheral::SetByteValue(regError, 6);
-                    //WriteString("Buffer too short");
                     sequenceError = true;
                     canExecute = false;
                 }
@@ -673,9 +755,6 @@ void playStream()
                     currentGroup->channels[buc].channelNumber = (sr->Buffer[posInSequence] - '0') * 10 + (sr->Buffer[posInSequence + 1] - '0');
                     currentGroup->channels[buc].octaveOffset = sr->Buffer[posInSequence + 2] == '+' ? 1 : sr->Buffer[posInSequence + 2] == '-' ? -1 : 0;
 
-                    //WriteString("Channel");
-                    //WriteNumber(currentGroup->channels[buc].channelNumber);
-
                     posInSequence += 3;
                 }
 
@@ -687,7 +766,7 @@ void playStream()
                     PREGISTER reg = ZXShield::Peripheral.GetRegister(buc);
                     ZXPeripheral::SetStreamValue(reg, "                                                                \0");
                     ZXPeripheral::UnlockRegister(reg);
-                    regStatus[buc] = NULL;
+                    regData[buc] = NULL;
                     channelNotes[buc].playing = false;
                 }
 
@@ -697,6 +776,8 @@ void playStream()
                 currentChannel = 0;
                 offset = 0;
                 currentOctave = 4;
+                currentOnVelocity = 127;
+                currentOffVelocity = 64;
                 noteDuration = 16;
                 groupEnabled = false;
                 currentGroup = 0;
@@ -710,20 +791,20 @@ void playStream()
             {
                 //WriteString("Unknown");
                 ZXPeripheral::SetByteValue(regError, 255);
-                WriteNumber(sr->Buffer[posInSequence] == 'T');
+                //WriteNumber(sr->Buffer[posInSequence] == 'T');
                 sequenceError = true;
 
             }
 
             if (sequenceError)
             {
-                WriteString("Sequence error");
+                //WriteString("Sequence error");
                 for (int buc = 0; buc < 16; buc++)
                 {
                     PREGISTER reg = ZXShield::Peripheral.GetRegister(buc);
                     ZXPeripheral::SetStreamValue(reg, "                                                                \0");
                     ZXPeripheral::UnlockRegister(reg);
-                    regStatus[buc] = NULL;
+                    regData[buc] = NULL;
                     channelNotes[buc].playing = false;
                 }
 
@@ -733,6 +814,8 @@ void playStream()
                 currentChannel = 0;
                 offset = 0;
                 currentOctave = 4;
+                currentOnVelocity = 127;
+                currentOffVelocity = 64;
                 noteDuration = 16;
                 groupEnabled = false;
                 currentGroup = 0;
@@ -751,7 +834,7 @@ void playStream()
                 {
                     //WriteString("Finished");
                     ZXPeripheral::UnlockRegister(reg);
-                    regStatus[currentSequence] = NULL;
+                    regData[currentSequence] = NULL;
 
                     currentSequence++;
                     posInSequence = 0;
@@ -762,7 +845,7 @@ void playStream()
                    // WriteString("Next sequence");
                     //WriteNumber(currentSequence);
 
-                    reg = regStatus[currentSequence];
+                    reg = regData[currentSequence];
 
                     if (reg == NULL)
                     {
@@ -781,22 +864,13 @@ void playStream()
 // the loop function runs over and over again until power down or reset
 void loop() 
 {
-    if (mode)
-    {
-        /*if (exec)
-        {
-            exec = false;
-            playStream();
-
-        }*/
-    }
-    else
+    if (!mode)
     {
         for (int buc = 0; buc < 16; buc++)
         {
-            if (regStatus[buc] != NULL)
+            if (regData[buc] != NULL)
             {
-                PREGISTER reg = regStatus[buc];
+                PREGISTER reg = regData[buc];
                 PSTREAM_REGISTER sr = (PSTREAM_REGISTER)reg->Data;
 
                 if (sr->BufferLength == 4)
@@ -854,160 +928,160 @@ void loop()
                     }
                 }
 
-                regStatus[buc] = NULL;
+                regData[buc] = NULL;
                 ZXPeripheral::UnlockRegister(reg);
             }
         }
     }
 }
-
-#pragma region Serial functions
-
-byte serialCheckRxComplete()
-{
-    return(UCSR0A & _BV(RXC0));		// nonzero if serial data is available to read.
-}
-byte serialCheckTxReady()
-{
-    return(UCSR0A & _BV(UDRE0));		// nonzero if transmit register is ready to receive new data.
-}
-
-void WriteNumber(word Value)
-{
-    char buffer[32];
-    memset(buffer, 0, 32);
-    ultoa(Value, buffer, 10);
-    WriteString(buffer);
-}
-void WriteString(const char* String)
-{
-
-#ifdef NO_INTERRUPTS_ON_COMMS
-    noInterrupts();
-#endif
-
-    int pos = 0;
-    int len = strlen(String);
-
-    while (pos < len)
-    {
-        while (!serialCheckTxReady())
-        {
-            ;;
-        }
-
-        UDR0 = String[pos++];
-    }
-
-    while (!serialCheckTxReady())
-    {
-        ;;
-    }
-
-    UDR0 = '\n';
-
-#ifdef NO_INTERRUPTS_ON_COMMS
-    interrupts();
-#endif
-
-}
-void WriteSegment(volatile byte* volatile target, word length)
-{
-
-#ifdef NO_INTERRUPTS_ON_COMMS
-    noInterrupts();
-#endif
-
-    int pos = 0;
-
-    while (pos < length)
-    {
-        while (!serialCheckTxReady())
-        {
-            ;;
-        }
-
-        UDR0 = target[pos++];
-    }
-
-#ifdef NO_INTERRUPTS_ON_COMMS
-    interrupts();
-#endif
-
-}
-
-byte ReadByte()
-{
-
-#ifdef NO_INTERRUPTS_ON_COMMS
-    noInterrupts();
-#endif
-
-    while (!serialCheckRxComplete())
-    {
-        ;;
-    }
-
-#ifdef NO_INTERRUPTS_ON_COMMS
-    interrupts();
-#endif
-
-    return UDR0;
-}
-unsigned int ReadInt()
-{
-
-#ifdef NO_INTERRUPTS_ON_COMMS
-    noInterrupts();
-#endif
-
-    unsigned int value;
-
-    while (!serialCheckRxComplete())
-    {
-        ;;
-    }
-
-    value = UDR0;
-
-    while (!serialCheckRxComplete())
-    {
-        ;;
-    }
-
-    value |= UDR0 << 8;
-
-#ifdef NO_INTERRUPTS_ON_COMMS
-    interrupts();
-#endif
-
-    return value;
-
-}
-void ReadSegment(volatile byte* target, word length)
-{
-
-#ifdef NO_INTERRUPTS_ON_COMMS
-    noInterrupts();
-#endif
-
-    while (length-- > 0)
-    {
-
-        while (!serialCheckRxComplete())
-        {
-            ;;
-        }
-
-        *target = (byte)UDR0;
-        target++;
-
-    }
-
-#ifdef NO_INTERRUPTS_ON_COMMS
-    interrupts();
-#endif
-
-}
-
-#pragma endregion
+//
+//#pragma region Serial functions
+//
+//byte serialCheckRxComplete()
+//{
+//    return(UCSR0A & _BV(RXC0));		// nonzero if serial data is available to read.
+//}
+//byte serialCheckTxReady()
+//{
+//    return(UCSR0A & _BV(UDRE0));		// nonzero if transmit register is ready to receive new data.
+//}
+//
+//void WriteNumber(word Value)
+//{
+//    char buffer[32];
+//    memset(buffer, 0, 32);
+//    ultoa(Value, buffer, 10);
+//    WriteString(buffer);
+//}
+//void WriteString(const char* String)
+//{
+//
+//#ifdef NO_INTERRUPTS_ON_COMMS
+//    noInterrupts();
+//#endif
+//
+//    int pos = 0;
+//    int len = strlen(String);
+//
+//    while (pos < len)
+//    {
+//        while (!serialCheckTxReady())
+//        {
+//            ;;
+//        }
+//
+//        UDR0 = String[pos++];
+//    }
+//
+//    while (!serialCheckTxReady())
+//    {
+//        ;;
+//    }
+//
+//    UDR0 = '\n';
+//
+//#ifdef NO_INTERRUPTS_ON_COMMS
+//    interrupts();
+//#endif
+//
+//}
+//void WriteSegment(volatile byte* volatile target, word length)
+//{
+//
+//#ifdef NO_INTERRUPTS_ON_COMMS
+//    noInterrupts();
+//#endif
+//
+//    int pos = 0;
+//
+//    while (pos < length)
+//    {
+//        while (!serialCheckTxReady())
+//        {
+//            ;;
+//        }
+//
+//        UDR0 = target[pos++];
+//    }
+//
+//#ifdef NO_INTERRUPTS_ON_COMMS
+//    interrupts();
+//#endif
+//
+//}
+//
+//byte ReadByte()
+//{
+//
+//#ifdef NO_INTERRUPTS_ON_COMMS
+//    noInterrupts();
+//#endif
+//
+//    while (!serialCheckRxComplete())
+//    {
+//        ;;
+//    }
+//
+//#ifdef NO_INTERRUPTS_ON_COMMS
+//    interrupts();
+//#endif
+//
+//    return UDR0;
+//}
+//unsigned int ReadInt()
+//{
+//
+//#ifdef NO_INTERRUPTS_ON_COMMS
+//    noInterrupts();
+//#endif
+//
+//    unsigned int value;
+//
+//    while (!serialCheckRxComplete())
+//    {
+//        ;;
+//    }
+//
+//    value = UDR0;
+//
+//    while (!serialCheckRxComplete())
+//    {
+//        ;;
+//    }
+//
+//    value |= UDR0 << 8;
+//
+//#ifdef NO_INTERRUPTS_ON_COMMS
+//    interrupts();
+//#endif
+//
+//    return value;
+//
+//}
+//void ReadSegment(volatile byte* target, word length)
+//{
+//
+//#ifdef NO_INTERRUPTS_ON_COMMS
+//    noInterrupts();
+//#endif
+//
+//    while (length-- > 0)
+//    {
+//
+//        while (!serialCheckRxComplete())
+//        {
+//            ;;
+//        }
+//
+//        *target = (byte)UDR0;
+//        target++;
+//
+//    }
+//
+//#ifdef NO_INTERRUPTS_ON_COMMS
+//    interrupts();
+//#endif
+//
+//}
+//
+//#pragma endregion

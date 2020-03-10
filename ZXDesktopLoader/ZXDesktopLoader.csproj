@@ -37,6 +37,9 @@
   <PropertyGroup>
     <ApplicationIcon>ico2_nY2_icon.ico</ApplicationIcon>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'vsTest|AnyCPU'">
+    <OutputPath>bin\vsTest\</OutputPath>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />

@@ -83,6 +83,7 @@ public:
 
 	void Reset();
 private:
+	void MIDIModeSoft();
 	byte cs;
 	byte xcs;
 	byte xreset;

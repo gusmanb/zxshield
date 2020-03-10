@@ -9,6 +9,10 @@
       <Configuration>Release</Configuration>
       <Platform>Win32</Platform>
     </ProjectConfiguration>
+    <ProjectConfiguration Include="vsTest|Win32">
+      <Configuration>vsTest</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{5F8AA569-32B5-4CB4-A281-DF412C18196C}</ProjectGuid>
@@ -53,6 +57,9 @@
     <CharacterSet>MultiByte</CharacterSet>
     <PlatformToolset>v141</PlatformToolset>
   </PropertyGroup>
+  <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='vsTest|Win32'">
+    <PlatformToolset>v142</PlatformToolset>
+  </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
@@ -79,10 +86,10 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(ProjectDir)..\ZXMIDIFirmware;$(ProjectDir)..\Devices;$(ProjectDir)..\ZXShield;F:\arduino-1.8.11\hardware\arduino\avr\libraries\SPI\src;F:\arduino-1.8.11\hardware\arduino\avr\cores\arduino;F:\arduino-1.8.11\hardware\arduino\avr\variants\mega;F:\arduino-1.8.11\hardware\tools\avr\\lib\gcc\avr\7.3.0\include;F:\arduino-1.8.11\hardware\tools\avr\avr\include;F:\arduino-1.8.11\hardware\tools\avr\\lib\gcc\avr\7.3.0\include;F:\arduino-1.8.11\hardware\tools\avr\avr\include-fixed;F:\arduino-1.8.11\hardware\tools\avr\avr\include\avr;F:\arduino-1.8.11\hardware\tools\avr\lib\gcc\avr\4.9.2\include;F:\arduino-1.8.11\hardware\tools\avr\lib\gcc\avr\4.9.2\include;F:\arduino-1.8.11\hardware\tools\avr\lib\gcc\avr\4.9.3\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)..\ZXMIDIFirmware;$(ProjectDir)..\Devices;$(ProjectDir)..\ZXShield;$(ProjectDir)..\..\..\..\AppData\Local\arduino15\packages\arduino\hardware\avr\1.6.23\libraries\SPI\src;F:\arduino-1.8.11\hardware\arduino\avr\libraries\SPI\src;F:\arduino-1.8.11\hardware\arduino\avr\cores\arduino;F:\arduino-1.8.11\hardware\arduino\avr\variants\mega;F:\arduino-1.8.11\hardware\tools\avr\\lib\gcc\avr\7.3.0\include;F:\arduino-1.8.11\hardware\tools\avr\avr\include;F:\arduino-1.8.11\hardware\tools\avr\\lib\gcc\avr\7.3.0\include;F:\arduino-1.8.11\hardware\tools\avr\avr\include-fixed;F:\arduino-1.8.11\hardware\tools\avr\avr\include\avr;F:\arduino-1.8.11\hardware\tools\avr\lib\gcc\avr\4.9.2\include;F:\arduino-1.8.11\hardware\tools\avr\lib\gcc\avr\4.9.2\include;F:\arduino-1.8.11\hardware\tools\avr\lib\gcc\avr\4.9.3\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ForcedIncludeFiles>$(ProjectDir)__vm\.ZXMIDIFirmware.vsarduino.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
       <IgnoreStandardIncludePath>true</IgnoreStandardIncludePath>
-      <PreprocessorDefinitions>__AVR_atmega2560__;__AVR_ATmega2560__;F_CPU=16000000L;ARDUINO=108011;ARDUINO_AVR_MEGA2560;ARDUINO_ARCH_AVR;__cplusplus=201103L;_VMICRO_INTELLISENSE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>__AVR_atmega2560__;__AVR_ATmega2560__;_VMDEBUG=1;F_CPU=16000000L;ARDUINO=108011;ARDUINO_AVR_MEGA2560;ARDUINO_ARCH_AVR;__cplusplus=201103L;_VMICRO_INTELLISENSE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -104,6 +111,13 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='vsTest|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(ProjectDir)..\ZXMIDIFirmware;$(ProjectDir)..\Devices;$(ProjectDir)..\ZXShield;F:\arduino-1.8.11\hardware\arduino\avr\libraries\SPI\src;F:\arduino-1.8.11\hardware\arduino\avr\cores\arduino;F:\arduino-1.8.11\hardware\arduino\avr\variants\mega;F:\arduino-1.8.11\hardware\tools\avr\\lib\gcc\avr\7.3.0\include;F:\arduino-1.8.11\hardware\tools\avr\avr\include;F:\arduino-1.8.11\hardware\tools\avr\\lib\gcc\avr\7.3.0\include;F:\arduino-1.8.11\hardware\tools\avr\avr\include-fixed;F:\arduino-1.8.11\hardware\tools\avr\avr\include\avr;F:\arduino-1.8.11\hardware\tools\avr\lib\gcc\avr\4.9.2\include;F:\arduino-1.8.11\hardware\tools\avr\lib\gcc\avr\4.9.2\include;F:\arduino-1.8.11\hardware\tools\avr\lib\gcc\avr\4.9.3\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <ForcedIncludeFiles>$(ProjectDir)__vm\.ZXMIDIFirmware.vsarduino.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <PreprocessorDefinitions>__AVR_atmega2560__;__AVR_ATmega2560__;F_CPU=16000000L;ARDUINO=108011;ARDUINO_AVR_MEGA2560;ARDUINO_ARCH_AVR;__cplusplus=201103L;_VMICRO_INTELLISENSE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ProjectCapability Include="VisualMicro" />
