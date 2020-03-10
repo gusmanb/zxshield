@@ -15,7 +15,7 @@
 #define XRESET 9
 #define XDCS 10
 #define DREQ 11
-#define DEV_MODE 12
+#define RTL 12
 
 #define NO_INTERRUPTS_ON_COMMS
 
@@ -96,7 +96,7 @@ void setup()
     calculateCMR();
     noteDuration = 16;
 
-    midi = new  VS1053MIDI(CS, XCS, XRESET, XDCS, DREQ, DEV_MODE);
+    midi = new  VS1053MIDI(CS, XCS, XRESET, XDCS, DREQ, RTL);
 
     ZXShield::Initialize();
     

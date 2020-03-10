@@ -19,6 +19,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ZXBasicROM", "ZXBasicROM\ZX
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{19CE39B7-712F-4F81-A3E2-E5E7668EAD8D}"
 	ProjectSection(SolutionItems) = preProject
+		midi_schema.png = midi_schema.png
 		README.MD = README.MD
 		ZXShield.png = ZXShield.png
 	EndProjectSection
@@ -64,6 +65,9 @@ EndProject
 Project("{F16D4249-6279-474E-8826-742E7FF7445C}") = "ZXMIDIPlayer", "ZXMIDIPlayer\ZXMIDIPlayer.z80cdproj", "{2D3A8B5F-1E3B-4BB8-911E-31B78444B872}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "MIDI", "MIDI", "{B616BDC6-CF82-42FF-990E-A0BDC300795F}"
+	ProjectSection(SolutionItems) = preProject
+		midi_schema.png = midi_schema.png
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
